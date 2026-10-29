@@ -14,7 +14,7 @@ JARVIS es un prototipo de tablero digital web diseñado para reunir información
 - [Tecnologías](#tecnologías)
 - [Requisitos e instalación](#requisitos-e-instalación)
 - [Manual instructivo](#manual-instructivo)
-- [Uso](#uso)
+- [Manual de uso de la aplicación](#manual-de-uso-de-la-aplicación)
 - [Estructura](#estructura)
 - [Metodología](#metodología)
 - [Desarrollo y alcance](#desarrollo-y-alcance)
@@ -172,15 +172,39 @@ Aunque JARVIS es un prototipo, conviene adoptar prácticas básicas de seguridad
 
 Este manual debe leerse como guía de uso y desarrollo del prototipo, sin sustituir la evaluación técnica ni la validación en entornos reales.
 
-## Uso
+## Manual de uso de la aplicación
 
-1. Ejecuta `npm run dev` y abre la dirección local indicada en la terminal.
-2. Concede permiso de ubicación para consultar el GPS, centrar el mapa y mostrar información meteorológica local.
-3. Explora las secciones de navegación y mantenimiento desde la interfaz.
-4. En multimedia, selecciona archivos de audio del dispositivo para reproducirlos localmente.
-5. En un dispositivo compatible y con el sitio publicado mediante HTTPS, usa la opción de instalación del navegador para añadir JARVIS a la pantalla de inicio.
+### 1. Abrir JARVIS
 
-Las funciones que consultan servicios externos necesitan conexión a Internet. La posición GPS se muestra en el navegador y sus coordenadas se envían a Open-Meteo para consultar el clima. El mapa carga mosaicos de OpenStreetMap. Los archivos de audio seleccionados se reproducen localmente.
+Abre en un navegador moderno la dirección donde está publicada la aplicación. Para ejecutarla desde el proyecto en tu equipo, inicia el servidor con `npm run dev` y abre la dirección local que muestra Vite. La ubicación requiere HTTPS o `localhost`.
+
+### 2. Recorrer las secciones
+
+Usa la barra de navegación para cambiar entre las vistas disponibles:
+
+- **Dashboard:** consulta la fecha, el clima actual, el pronóstico de tres días, la velocidad y ubicación GPS, y la batería del dispositivo. El panel de consumo muestra un historial local del dispositivo; el botón **Borrar** elimina ese historial.
+- **Navegación:** consulta el mapa y la información de ubicación disponible. Para obtener datos GPS, permite el acceso a la ubicación cuando el navegador lo solicite.
+- **Mantenimiento / Kanban:** escribe una tarea y selecciona **Añadir tarea**. Las tareas pasan de **Pendiente** a **En curso** y luego a **Hecho** con **Avanzar**; en la columna final, **Reabrir** devuelve la tarea a Pendiente. Las tareas son datos de la sesión actual y pueden perderse al recargar la página.
+- **Multimedia:** selecciona uno o varios archivos de audio del dispositivo. Usa los controles para reproducir o pausar, cambiar de pista y ajustar el volumen. Los archivos se reproducen localmente y no se envían a un servicio externo.
+
+### 3. Usar los controles generales
+
+- En la parte superior, el control de lectura en voz alta inicia o detiene la lectura de la página.
+- El control del micrófono activa o detiene los comandos de voz. Si está disponible, selecciona el idioma de reconocimiento en el campo contiguo. Estas funciones dependen de la compatibilidad del navegador y de sus permisos.
+- El control de tema alterna entre apariencia clara y oscura.
+- En dispositivos y navegadores compatibles, selecciona **Instalar** para añadir la aplicación al dispositivo. La instalación requiere que el sitio esté publicado mediante HTTPS.
+
+### 4. Permitir ubicación y consultar el clima
+
+Si la ubicación no aparece, selecciona **Solicitar ubicación** en el panel GPS y acepta el permiso en el navegador. Si anteriormente lo bloqueaste, habilítalo en la configuración de permisos del sitio y vuelve a intentarlo. La señal puede tardar o no estar disponible en interiores.
+
+El GPS y los servicios meteorológicos requieren conexión a Internet para consultar el clima de la ubicación. Las coordenadas se utilizan para solicitar datos meteorológicos a Open-Meteo; el mapa carga mosaicos de OpenStreetMap. Si no hay permiso, señal o conexión, algunos datos no estarán disponibles.
+
+### 5. Consideraciones importantes
+
+- La velocidad, ubicación y batería mostradas corresponden al dispositivo y al navegador, **no al vehículo**.
+- JARVIS es un prototipo y no reemplaza los instrumentos del automóvil, un sistema certificado de navegación ni las medidas de seguridad al conducir. Configura la aplicación únicamente cuando el vehículo esté detenido.
+- El historial de batería se guarda en el almacenamiento local del navegador. La compatibilidad con GPS, batería, voz e instalación varía según el navegador y el dispositivo.
 
 ## Estructura
 
