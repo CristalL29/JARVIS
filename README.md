@@ -13,6 +13,7 @@ JARVIS es un prototipo de tablero digital web diseñado para reunir información
 - [Características](#características)
 - [Tecnologías](#tecnologías)
 - [Requisitos e instalación](#requisitos-e-instalación)
+- [Manual instructivo](#manual-instructivo)
 - [Uso](#uso)
 - [Estructura](#estructura)
 - [Metodología](#metodología)
@@ -80,6 +81,96 @@ npm run preview
 ```
 
 La compilación de producción se genera en `dist/`. Para publicar la PWA, despliega esa carpeta en un hosting estático con HTTPS. Consulta [DEPLOY-APK.md](./DEPLOY-APK.md) y [PWA-APK.md](./PWA-APK.md) para publicación y opciones de empaquetado Android.
+
+## Manual instructivo
+
+### Objetivos
+
+JARVIS busca ofrecer una experiencia de tablero digital útil para la navegación y la observación básica de condiciones durante un recorrido. En esta versión, el objetivo principal es validar la interfaz, las pruebas de uso en navegador y la viabilidad de instalar la app como PWA en dispositivos móviles. El sistema está pensado como prototipo demostrativo y no debe considerarse un sistema de monitoreo del vehículo ni de seguridad activa.
+
+Los objetivos específicos del proyecto son:
+
+- Probar una interfaz clara y legible para consultar hora, clima, posición y navegación.
+- Evaluar la utilidad del GPS, la batería del dispositivo y la reproducción de medios locales.
+- Validar el comportamiento en navegadores modernos y dispositivos móviles.
+- Preparar una base para futuras integraciones con hardware y datos del vehículo.
+
+### Materiales o recursos
+
+Para trabajar con JARVIS se requieren los siguientes recursos:
+
+- Ordenador con Windows, macOS o Linux.
+- Node.js `^20.19.0` o `>=22.12.0`.
+- Gestor de paquetes `npm`.
+- Git para clonar el repositorio.
+- Navegador moderno (Chrome, Edge, Firefox, Safari o equivalente).
+- Internet para cargar mapas y pronósticos meteorológicos.
+- Dispositivo móvil o tableta compatible para pruebas de experiencia PWA.
+- Permisos de geolocalización y acceso a archivos multimedia del navegador.
+
+### Procedimiento
+
+#### 1. Clonar y preparar el repositorio
+
+```bash
+git clone https://github.com/CristalL29/JARVIS.git
+cd JARVIS
+npm ci
+```
+
+#### 2. Ejecutar la aplicación en modo de desarrollo
+
+```bash
+npm run dev
+```
+
+Luego abre la dirección local que indique Vite en el navegador. Si la aplicación se ejecuta en un dispositivo de la misma red, también puede probarse accediendo a la URL local del equipo.
+
+#### 3. Configurar permisos y comprobar la experiencia
+
+1. Acepta los permisos de ubicación si el navegador lo solicita.
+2. Verifica que el mapa se centre en la posición actual.
+3. Comprueba que el clima se actualice con los datos del lugar.
+4. Revisa la sección de mantenimiento y multimedia.
+5. Prueba la aplicación en modo pantalla completa o instalación como acceso directo.
+
+#### 4. Validar el proyecto antes de despliegue
+
+```bash
+npm run lint
+npm run build
+npm run preview
+```
+
+La validación de compilación ayuda a detectar errores de sintaxis, rendimiento y configuración antes de publicar la versión.
+
+#### 5. Preparar la publicación
+
+Para poner la aplicación a disposición en un entorno real, se debe desplegar la carpeta `dist/` en un host estático con soporte HTTPS. Para publicación móvil o paquetes Android, consulta la documentación específica en [DEPLOY-APK.md](./DEPLOY-APK.md) y [PWA-APK.md](./PWA-APK.md).
+
+### Recomendaciones
+
+- Usa `localhost` o HTTPS para garantizar permisos de geolocalización y compatibilidad con PWA.
+- Prueba la app en navegadores y dispositivos reales, no solo en emulación.
+- Mantén la interfaz legible, con contrastes adecuados y elementos de tamaño suficiente para conducción.
+- Considera que la disponibilidad de GPS, batería y audio depende de la plataforma y del navegador.
+- Documenta los errores y comportamientos no esperados antes de integrar funciones más avanzadas.
+- Mantén la lógica de la interfaz separada del contenido visual para facilitar futuras mejoras.
+- Realiza pruebas periódicas con `npm run build` para detectar regresiones antes de cada entrega.
+
+### Medidas de seguridad
+
+Aunque JARVIS es un prototipo, conviene adoptar prácticas básicas de seguridad durante el desarrollo y uso:
+
+- No compartas credenciales, claves de firma, tokens ni datos personales en commits, issues o comentarios.
+- Evita publicar versiones de prueba con información real del usuario o del entorno de trabajo.
+- Usa conexiones HTTPS en producción para proteger la carga de recursos y la experiencia del usuario.
+- No asumas que los datos de GPS, clima o dispositivo son datos del vehículo; verifica su origen y alcance antes de reutilizarlos en otros sistemas.
+- Si se integra con sensores o hardware en el futuro, encapsula la comunicación, valida entradas y restringe permisos al mínimo necesario.
+- Mantén los archivos y dependencias actualizados, especialmente en entornos de despliegue y publicación.
+- No utilices la interfaz como sistema de seguridad, navegación crítica o control automático del vehículo sin validación técnica adicional.
+
+Este manual debe leerse como guía de uso y desarrollo del prototipo, sin sustituir la evaluación técnica ni la validación en entornos reales.
 
 ## Uso
 
