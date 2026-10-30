@@ -1,8 +1,20 @@
 const CACHE_NAME = 'jarvis-shell-v1'
-const APP_SHELL = ['/', '/manifest.webmanifest', '/icon.svg', '/icon-192.svg', '/icon-512.svg']
+const BUILD_MANIFEST_URL = '/build-manifest.json'
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()))
+  event.waitUntil(caches.open(CACHE_NAME).then(async (cache) => {
+    await cache.add('/')
+    const response = await fetch(BUILD_MANIFEST_URL)
+    if (!response.ok) throw new Error('No se pudo leer el manifiesto de recursos de la app.')
+    const manifest = await response.json()
+    const assets = new Set([BUILD_MANIFEST_URL])
+    for (const entry of Object.values(manifest)) {
+      for (const asset of [entry.file, ...(entry.css || []), ...(entry.assets || [])]) {
+        if (asset) assets.add(new URL(asset, self.location.origin).href)
+      }
+    }
+    await cache.addAll([...assets])
+  }).then(() => self.skipWaiting()))
 })
 
 self.addEventListener('activate', (event) => {

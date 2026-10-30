@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import './App.css'
 import NavigationView from './components/NavigationView.jsx'
+import StorageView from './StorageView.jsx'
 
 const assistantName = 'Jarvis'
 
@@ -476,6 +477,7 @@ function App() {
     { id: 'dashboard', label: 'Dashboard', icon: '⌂' },
     { id: 'navigation', label: 'Navegación', icon: '⌖' },
     { id: 'maintenance', label: 'Mantenimiento / Kanban', icon: '▦' },
+    { id: 'storage', label: 'Almacenamiento', icon: '▤' },
     { id: 'multimedia', label: 'Multimedia', icon: '♫' },
   ]
   const selectTab = (tabId) => {
@@ -528,6 +530,8 @@ function App() {
         ? `${overview} Próxima tarea: ${pendingTasks[0].title.slice(0, 90)}.`
         : overview
     }
+
+    if (activeTab === 'storage') return 'Biblioteca local de archivos guardados en este dispositivo, disponible sin conexión.'
 
     if (!currentTrack) return 'No hay ningún audio cargado.'
     return isMediaPlaying ? `Reproduciendo ${currentTrack.name}.` : `${currentTrack.name} está pausado.`
@@ -916,7 +920,7 @@ function App() {
           {maintenanceTasks.filter((task) => task.lane === laneIndex).map((task) => <article className="task-card" key={task.id}><p>{task.title}</p><button type="button" onClick={() => setMaintenanceTasks(maintenanceTasks.map((item) => item.id === task.id ? { ...item, lane: (item.lane + 1) % 3 } : item))}>{laneIndex === 2 ? 'Reabrir' : 'Avanzar'} <span aria-hidden="true">→</span></button></article>)}
           {maintenanceTasks.every((task) => task.lane !== laneIndex) && <p className="lane-empty">Sin tareas</p>}
         </section>)}</div>
-      </section> : <section className="feature-view multimedia-view">
+      </section> : activeTab === 'storage' ? <StorageView /> : <section className="feature-view multimedia-view">
         <div className="feature-heading"><div><p className="eyebrow">A BORDO</p><h1>Multimedia</h1></div></div>
         <div className="media-player"><div className="media-art" aria-hidden="true"><span>♫</span><strong>{currentTrack ? 'LOCAL' : 'MÚSICA'}</strong></div><div className="media-content"><p className="eyebrow">MÚSICA A BORDO</p><h2>Conecta tu música</h2><p>Selecciona archivos de audio de este dispositivo. No se envían a ningún servicio externo.</p><label className="field-label" htmlFor="local-audio-files">Archivos de música</label><input id="local-audio-files" className="api-input media-file-input" type="file" accept="audio/*" multiple onChange={addAudioFiles} /><p className="track-name" title={currentTrack?.name || ''}>{currentTrack?.name || 'No hay pistas seleccionadas'}</p><audio ref={audioRef} className="audio-controls" src={currentTrack?.url} preload="metadata" onPlay={() => { setIsMediaPlaying(true); if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing' }} onPause={() => { setIsMediaPlaying(false); if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused' }} onEnded={() => changeTrack(1, true)}>Tu navegador no admite la reproducción de audio.</audio><div className="media-controls"><button id="media-previous" type="button" className="media-control-button" onClick={() => changeTrack(-1)} disabled={!tracks.length} aria-label="Pista anterior" title="Pista anterior">|‹</button><button id="media-toggle" type="button" className="media-control-button media-play-button" onClick={toggleMediaPlayback} disabled={!currentTrack} aria-label={isMediaPlaying ? 'Pausar' : 'Reproducir'} title={isMediaPlaying ? 'Pausar' : 'Reproducir'}>{isMediaPlaying ? 'Ⅱ' : '▶'}</button><button id="media-next" type="button" className="media-control-button" onClick={() => changeTrack(1)} disabled={!tracks.length} aria-label="Siguiente pista" title="Siguiente pista">›|</button><label className="volume-control"><span>Volumen</span><input type="range" min="0" max="1" step="0.01" value={volume} onChange={(event) => setVolume(Number(event.target.value))} aria-label="Volumen" /></label></div>{tracks.length > 0 && <ol className="media-track-list" aria-label="Lista de pistas">{tracks.map((track, index) => <li key={track.url}><button type="button" onClick={() => { setActiveTrackIndex(index); setIsMediaPlaying(false) }} aria-current={activeTrackIndex === index ? 'true' : undefined}>{track.name}</button></li>)}</ol>}</div></div>
       </section>}</div>

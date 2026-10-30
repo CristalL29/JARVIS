@@ -35,6 +35,7 @@ El proyecto se plantea como una base de prototipado: antes de integrarlo con un 
 - Estado e historial de batería del **dispositivo** cuando el navegador ofrece la Battery Status API; no representa la batería del vehículo.
 - Sección de mantenimiento con una lista de tareas.
 - Reproductor de archivos de audio seleccionados localmente, sin subirlos a un servicio.
+- Biblioteca local para guardar y organizar archivos en carpetas, buscarlos, filtrarlos, previsualizarlos y eliminarlos sin conexión.
 - Interfaz adaptable e instalable como aplicación web progresiva (PWA) en navegadores compatibles.
 - Preparación para empaquetar la PWA como aplicación Android mediante Trusted Web Activity (TWA); consulta [PWA-APK.md](./PWA-APK.md) y [DEPLOY-APK.md](./DEPLOY-APK.md).
 
@@ -45,7 +46,7 @@ La disponibilidad de GPS, batería, instalación PWA y reconocimiento de voz dep
 - **JavaScript (ES modules)**, **React 19** y **Vite 8** para la aplicación web.
 - **React Leaflet 5** y **Leaflet 1.9** para el mapa.
 - **OpenStreetMap** para los mosaicos del mapa.
-- **APIs web del navegador**, entre ellas Geolocation, Battery Status, almacenamiento local y reproducción de audio.
+- **APIs web del navegador**, entre ellas Geolocation, Battery Status, IndexedDB para archivos locales y reproducción de audio.
 - **PWA y Capacitor**: manifiesto y service worker para instalación web, con configuración y herramientas Gradle para el flujo Android.
 - **Oxlint** para análisis estático del código.
 
