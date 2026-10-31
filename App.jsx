@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import './App.css'
 import NavigationView from './components/NavigationView.jsx'
+import ChecklistView from './components/ChecklistView.jsx'
 import StorageView from './StorageView.jsx'
+import { getChecklistAlerts, loadChecklistTasks, saveChecklistTasks, sendChecklistNotification } from './checklistService.js'
 
 const assistantName = 'Jarvis'
 
@@ -160,12 +162,9 @@ function App() {
   const [voiceLanguage, setVoiceLanguage] = useState(() => localStorage.getItem('voice-command-language') || 'auto')
   const voiceRecognitionRef = useRef(null)
   const pendingVoiceReplyRef = useRef('')
-  const [maintenanceTasks, setMaintenanceTasks] = useState([
-    { id: 1, title: 'Revisar presión de neumáticos', lane: 0 },
-    { id: 2, title: 'Comprobar nivel de aceite', lane: 1 },
-    { id: 3, title: 'Limpieza exterior', lane: 2 },
-  ])
-  const [newTask, setNewTask] = useState('')
+  const [maintenanceTasks, setMaintenanceTasks] = useState(loadChecklistTasks)
+  const checklistAlerts = getChecklistAlerts(maintenanceTasks)
+  const [checklistNotificationSent, setChecklistNotificationSent] = useState(false)
   const [tracks, setTracks] = useState([])
   const [activeTrackIndex, setActiveTrackIndex] = useState(-1)
   const [isMediaPlaying, setIsMediaPlaying] = useState(false)
@@ -199,6 +198,15 @@ function App() {
   useEffect(() => {
     localStorage.setItem('voice-command-language', voiceLanguage)
   }, [voiceLanguage])
+
+  useEffect(() => {
+    saveChecklistTasks(maintenanceTasks)
+  }, [maintenanceTasks])
+
+  useEffect(() => {
+    if (!checklistAlerts.length || checklistNotificationSent) return
+    if (sendChecklistNotification(checklistAlerts)) setChecklistNotificationSent(true)
+  }, [checklistAlerts, checklistNotificationSent])
 
   useEffect(() => () => {
     window.speechSynthesis?.cancel()
@@ -476,7 +484,7 @@ function App() {
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: '⌂' },
     { id: 'navigation', label: 'Navegación', icon: '⌖' },
-    { id: 'maintenance', label: 'Mantenimiento / Kanban', icon: '▦' },
+    { id: 'maintenance', label: 'Mantenimiento/Kanban', icon: '▦' },
     { id: 'storage', label: 'Almacenamiento', icon: '▤' },
     { id: 'multimedia', label: 'Multimedia', icon: '♫' },
   ]
@@ -522,10 +530,9 @@ function App() {
     }
 
     if (activeTab === 'maintenance') {
-      const pendingTasks = maintenanceTasks.filter((task) => task.lane === 0)
-      const inProgressCount = maintenanceTasks.filter((task) => task.lane === 1).length
-      const completedCount = maintenanceTasks.filter((task) => task.lane === 2).length
-      const overview = `${pendingTasks.length} tareas pendientes, ${inProgressCount} en curso y ${completedCount} completadas.`
+      const pendingTasks = maintenanceTasks.filter((task) => !task.isArchived && !task.isCompleted)
+      const completedCount = maintenanceTasks.filter((task) => !task.isArchived && task.isCompleted).length
+      const overview = `${pendingTasks.length} tareas pendientes y ${completedCount} completadas en la lista de cotejo.`
       return pendingTasks.length
         ? `${overview} Próxima tarea: ${pendingTasks[0].title.slice(0, 90)}.`
         : overview
@@ -771,6 +778,12 @@ function App() {
         </div>
       </section>
 
+      {checklistAlerts.length > 0 && <section className="checklist-alert" role="alert">
+        <div className="checklist-alert-icon" aria-hidden="true">!</div>
+        <div><strong>Mantenimiento: {checklistAlerts.length} {checklistAlerts.length === 1 ? 'tarea requiere' : 'tareas requieren'} atención</strong><span>{checklistAlerts[0].title}{checklistAlerts[0].endDate ? ` · límite ${new Intl.DateTimeFormat('es', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(checklistAlerts[0].endDate))}` : ''}</span></div>
+        <button type="button" onClick={() => setActiveTab('maintenance')}>Revisar lista</button>
+      </section>}
+
       <div className="dashboard-grid">
         <section className="weather-panel panel" aria-labelledby="weather-heading">
           <div className="panel-heading">
@@ -908,20 +921,8 @@ function App() {
         </section>
       </div>
 
-      <footer className="dashboard-footer"><span><span className="footer-mark" />{assistantName.toUpperCase()} · DATOS PARA TU DÍA</span><span>Clima de Open-Meteo <span className="footer-separator">/</span> GPS del dispositivo</span></footer>
-      </> : activeTab === 'navigation' ? <NavigationView location={navigationLocation} speed={speed} locationStatus={locationStatus} requestLocation={requestLocation} /> : activeTab === 'maintenance' ? <section className="feature-view maintenance-view">
-        <div className="feature-heading"><div><p className="eyebrow">CUIDADO DEL VEHÍCULO</p><h1>Mantenimiento</h1></div><span className="task-count">{maintenanceTasks.length} tareas</span></div>
-        <form className="task-form" onSubmit={(event) => { event.preventDefault(); const title = newTask.trim(); if (title) { setMaintenanceTasks([...maintenanceTasks, { id: Date.now(), title, lane: 0 }]); setNewTask('') } }}>
-          <input aria-label="Nueva tarea de mantenimiento" value={newTask} onChange={(event) => setNewTask(event.target.value)} placeholder="Añadir tarea de mantenimiento..." />
-          <button type="submit" disabled={!newTask.trim()}>Añadir tarea <span aria-hidden="true">+</span></button>
-        </form>
-        <div className="kanban-board">{['Pendiente', 'En curso', 'Hecho'].map((lane, laneIndex) => <section className="kanban-lane" key={lane}>
-          <div className="lane-heading"><h2>{lane}</h2><span>{maintenanceTasks.filter((task) => task.lane === laneIndex).length}</span></div>
-          {maintenanceTasks.filter((task) => task.lane === laneIndex).map((task) => <article className="task-card" key={task.id}><p>{task.title}</p><button type="button" onClick={() => setMaintenanceTasks(maintenanceTasks.map((item) => item.id === task.id ? { ...item, lane: (item.lane + 1) % 3 } : item))}>{laneIndex === 2 ? 'Reabrir' : 'Avanzar'} <span aria-hidden="true">→</span></button></article>)}
-          {maintenanceTasks.every((task) => task.lane !== laneIndex) && <p className="lane-empty">Sin tareas</p>}
-        </section>)}</div>
-      </section> : activeTab === 'storage' ? <StorageView /> : <section className="feature-view multimedia-view">
-        <div className="feature-heading"><div><p className="eyebrow">A BORDO</p><h1>Multimedia</h1></div></div>
+      <footer className="dashboard-footer"><span><span className="footer-mark" />{assistantName.toUpperCase()} · DATOS PARA TU DÍA</span><span>Clima de Open-Meteo <span className="footer-separator">/</span> GPS del dispositivo</span>      </footer>
+      </> : activeTab === 'navigation' ? <NavigationView location={navigationLocation} speed={speed} locationStatus={locationStatus} requestLocation={requestLocation} /> : activeTab === 'maintenance' ? <ChecklistView tasks={maintenanceTasks} setTasks={setMaintenanceTasks} /> : activeTab === 'storage' ? <StorageView /> : <section className="feature-view multimedia-view">        <div className="feature-heading"><div><p className="eyebrow">A BORDO</p><h1>Multimedia</h1></div></div>
         <div className="media-player"><div className="media-art" aria-hidden="true"><span>♫</span><strong>{currentTrack ? 'LOCAL' : 'MÚSICA'}</strong></div><div className="media-content"><p className="eyebrow">MÚSICA A BORDO</p><h2>Conecta tu música</h2><p>Selecciona archivos de audio de este dispositivo. No se envían a ningún servicio externo.</p><label className="field-label" htmlFor="local-audio-files">Archivos de música</label><input id="local-audio-files" className="api-input media-file-input" type="file" accept="audio/*" multiple onChange={addAudioFiles} /><p className="track-name" title={currentTrack?.name || ''}>{currentTrack?.name || 'No hay pistas seleccionadas'}</p><audio ref={audioRef} className="audio-controls" src={currentTrack?.url} preload="metadata" onPlay={() => { setIsMediaPlaying(true); if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing' }} onPause={() => { setIsMediaPlaying(false); if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused' }} onEnded={() => changeTrack(1, true)}>Tu navegador no admite la reproducción de audio.</audio><div className="media-controls"><button id="media-previous" type="button" className="media-control-button" onClick={() => changeTrack(-1)} disabled={!tracks.length} aria-label="Pista anterior" title="Pista anterior">|‹</button><button id="media-toggle" type="button" className="media-control-button media-play-button" onClick={toggleMediaPlayback} disabled={!currentTrack} aria-label={isMediaPlaying ? 'Pausar' : 'Reproducir'} title={isMediaPlaying ? 'Pausar' : 'Reproducir'}>{isMediaPlaying ? 'Ⅱ' : '▶'}</button><button id="media-next" type="button" className="media-control-button" onClick={() => changeTrack(1)} disabled={!tracks.length} aria-label="Siguiente pista" title="Siguiente pista">›|</button><label className="volume-control"><span>Volumen</span><input type="range" min="0" max="1" step="0.01" value={volume} onChange={(event) => setVolume(Number(event.target.value))} aria-label="Volumen" /></label></div>{tracks.length > 0 && <ol className="media-track-list" aria-label="Lista de pistas">{tracks.map((track, index) => <li key={track.url}><button type="button" onClick={() => { setActiveTrackIndex(index); setIsMediaPlaying(false) }} aria-current={activeTrackIndex === index ? 'true' : undefined}>{track.name}</button></li>)}</ol>}</div></div>
       </section>}</div>
 
