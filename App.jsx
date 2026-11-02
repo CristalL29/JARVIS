@@ -4,6 +4,7 @@ import NavigationView from './components/NavigationView.jsx'
 import ChecklistView from './components/ChecklistView.jsx'
 import StorageView from './StorageView.jsx'
 import SpotifyPlayer from './SpotifyPlayer.jsx'
+import YoutubePlayer from './YoutubePlayer.jsx'
 import { getChecklistAlerts, loadChecklistTasks, saveChecklistTasks, sendChecklistNotification } from './checklistService.js'
 
 const assistantName = 'Jarvis'
@@ -527,6 +528,7 @@ function App() {
     { id: 'maintenance', label: 'Mantenimiento/Kanban', icon: '▦' },
     { id: 'storage', label: 'Almacenamiento', icon: '▤' },
     { id: 'multimedia', label: 'Multimedia', icon: '♫' },
+    { id: 'youtube', label: 'YouTube', icon: '▶' },
   ]
   const selectTab = (tabId) => {
     if (activeTab === tabId) return
@@ -579,6 +581,10 @@ function App() {
     }
 
     if (activeTab === 'storage') return 'Biblioteca local de archivos guardados en este dispositivo, disponible sin conexión.'
+
+    if (activeTab === 'youtube') {
+      return 'Reproductor de YouTube disponible cuando el vehículo está detenido.'
+    }
 
     if (!currentTrack) return 'No hay ningún audio cargado.'
     return isMediaPlaying ? `Reproduciendo ${currentTrack.name}.` : `${currentTrack.name} está pausado.`
@@ -962,7 +968,7 @@ function App() {
       </div>
 
       <footer className="dashboard-footer"><span><span className="footer-mark" />{assistantName.toUpperCase()} · DATOS PARA TU DÍA</span><span>Clima de Open-Meteo <span className="footer-separator">/</span> GPS del dispositivo</span>      </footer>
-      </> : activeTab === 'navigation' ? <NavigationView location={navigationLocation} speed={speed} locationStatus={locationStatus} requestLocation={requestLocation} /> : activeTab === 'maintenance' ? <ChecklistView tasks={maintenanceTasks} setTasks={setMaintenanceTasks} /> : activeTab === 'storage' ? <StorageView /> : <section className="feature-view multimedia-view" aria-labelledby="multimedia-heading">
+      </> : activeTab === 'navigation' ? <NavigationView location={navigationLocation} speed={speed} locationStatus={locationStatus} requestLocation={requestLocation} /> : activeTab === 'maintenance' ? <ChecklistView tasks={maintenanceTasks} setTasks={setMaintenanceTasks} /> : activeTab === 'storage' ? <StorageView /> : activeTab === 'youtube' ? <YoutubePlayer vehicleState={{ speedKmh: speed ?? 0, isMoving: (speed ?? 0) > 5, parkBrakeEngaged: true }} hidden={false} /> : <section className="feature-view multimedia-view" aria-labelledby="multimedia-heading">
         <div className="feature-heading"><div><p className="eyebrow">A BORDO</p><h1 id="multimedia-heading">Multimedia</h1></div></div>
         <div className="media-source-tabs" role="tablist" aria-label="Fuente de música">
           <button id="local-audio-tab" type="button" role="tab" aria-selected={mediaSource === 'local'} aria-controls="local-audio-panel" onClick={() => setMediaSource('local')}>Archivos locales</button>
