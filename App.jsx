@@ -3,6 +3,7 @@ import './App.css'
 import NavigationView from './components/NavigationView.jsx'
 import ChecklistView from './components/ChecklistView.jsx'
 import StorageView from './StorageView.jsx'
+import SpotifyPlayer from './SpotifyPlayer.jsx'
 import { getChecklistAlerts, loadChecklistTasks, saveChecklistTasks, sendChecklistNotification } from './checklistService.js'
 
 const assistantName = 'Jarvis'
@@ -155,7 +156,10 @@ function WeatherIcon({ code, description, className = '' }) {
 
 function App() {
   const [theme, setTheme] = useState(() => localStorage.getItem('dashboard-theme') || 'light')
-  const [activeTab, setActiveTab] = useState('dashboard')
+  const [activeTab, setActiveTab] = useState(() => {
+    const parameters = new URLSearchParams(window.location.search)
+    return parameters.has('code') || parameters.has('error') ? 'multimedia' : 'dashboard'
+  })
   const [isReading, setIsReading] = useState(false)
   const [isListening, setIsListening] = useState(false)
   const [voiceStatus, setVoiceStatus] = useState('')
@@ -167,6 +171,8 @@ function App() {
   const [checklistNotificationSent, setChecklistNotificationSent] = useState(false)
   const [tracks, setTracks] = useState([])
   const [activeTrackIndex, setActiveTrackIndex] = useState(-1)
+  const [mediaSource, setMediaSource] = useState('local')
+  const [localMediaError, setLocalMediaError] = useState('')
   const [isMediaPlaying, setIsMediaPlaying] = useState(false)
   const [volume, setVolume] = useState(0.8)
   const audioRef = useRef(null)
@@ -399,6 +405,8 @@ function App() {
   const currentTrack = tracks[activeTrackIndex] || null
   const currentTrackName = currentTrack?.name
   const currentTrackUrl = currentTrack?.url
+  const currentTrackArtist = currentTrack?.artist || 'Artista desconocido'
+  const currentTrackDuration = currentTrack?.duration
   const changeTrack = (offset, autoplay) => {
     if (!tracks.length) return
     const nextIndex = (activeTrackIndex + offset + tracks.length) % tracks.length
@@ -406,16 +414,48 @@ function App() {
     setIsMediaPlaying(autoplay ?? (audioRef.current ? !audioRef.current.paused : isMediaPlaying))
   }
   const addAudioFiles = (event) => {
-    const files = [...event.target.files].filter((file) => file.type.startsWith('audio/'))
+    const selectedFiles = [...event.target.files]
+    event.target.value = ''
+    const supportedExtensions = /\.(mp3|wav|ogg|oga|opus|m4a|aac|flac|webm)$/i
+    const files = selectedFiles.filter((file) => file.type.startsWith('audio/') || supportedExtensions.test(file.name))
+    if (files.length !== selectedFiles.length) setLocalMediaError('Algunos archivos no son formatos de audio compatibles y se omitieron.')
+    else setLocalMediaError('')
     if (!files.length) return
     const addedTracks = files.map((file) => {
       const url = URL.createObjectURL(file)
       trackUrlsRef.current.push(url)
-      return { name: file.name, url }
+      const metadataProbe = new Audio()
+      metadataProbe.preload = 'metadata'
+      metadataProbe.onloadedmetadata = () => {
+        const { duration } = metadataProbe
+        if (Number.isFinite(duration)) {
+          setTracks((current) => current.map((track) => track.url === url ? { ...track, duration } : track))
+        }
+        metadataProbe.removeAttribute('src')
+        metadataProbe.load()
+      }
+      metadataProbe.onerror = () => {
+        metadataProbe.removeAttribute('src')
+        metadataProbe.load()
+      }
+      metadataProbe.src = url
+      const fileName = file.name.replace(/\.[^.]+$/, '')
+      const [artist, ...titleParts] = fileName.split(/\s[-–—]\s/)
+      return {
+        name: titleParts.length ? titleParts.join(' - ') : fileName,
+        artist: titleParts.length ? artist : 'Artista desconocido',
+        duration: null,
+        url,
+      }
     })
     if (tracks.length === 0) setActiveTrackIndex(0)
     setTracks((current) => [...current, ...addedTracks])
-    event.target.value = ''
+  }
+  const updateTrackDuration = (event) => {
+    const { duration } = event.currentTarget
+    if (!Number.isFinite(duration)) return
+    const trackUrl = event.currentTarget.currentSrc
+    setTracks((current) => current.map((track) => track.url === trackUrl ? { ...track, duration } : track))
   }
   const toggleMediaPlayback = () => {
     if (!audioRef.current || !currentTrack) return
@@ -922,8 +962,18 @@ function App() {
       </div>
 
       <footer className="dashboard-footer"><span><span className="footer-mark" />{assistantName.toUpperCase()} · DATOS PARA TU DÍA</span><span>Clima de Open-Meteo <span className="footer-separator">/</span> GPS del dispositivo</span>      </footer>
-      </> : activeTab === 'navigation' ? <NavigationView location={navigationLocation} speed={speed} locationStatus={locationStatus} requestLocation={requestLocation} /> : activeTab === 'maintenance' ? <ChecklistView tasks={maintenanceTasks} setTasks={setMaintenanceTasks} /> : activeTab === 'storage' ? <StorageView /> : <section className="feature-view multimedia-view">        <div className="feature-heading"><div><p className="eyebrow">A BORDO</p><h1>Multimedia</h1></div></div>
-        <div className="media-player"><div className="media-art" aria-hidden="true"><span>♫</span><strong>{currentTrack ? 'LOCAL' : 'MÚSICA'}</strong></div><div className="media-content"><p className="eyebrow">MÚSICA A BORDO</p><h2>Conecta tu música</h2><p>Selecciona archivos de audio de este dispositivo. No se envían a ningún servicio externo.</p><label className="field-label" htmlFor="local-audio-files">Archivos de música</label><input id="local-audio-files" className="api-input media-file-input" type="file" accept="audio/*" multiple onChange={addAudioFiles} /><p className="track-name" title={currentTrack?.name || ''}>{currentTrack?.name || 'No hay pistas seleccionadas'}</p><audio ref={audioRef} className="audio-controls" src={currentTrack?.url} preload="metadata" onPlay={() => { setIsMediaPlaying(true); if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing' }} onPause={() => { setIsMediaPlaying(false); if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused' }} onEnded={() => changeTrack(1, true)}>Tu navegador no admite la reproducción de audio.</audio><div className="media-controls"><button id="media-previous" type="button" className="media-control-button" onClick={() => changeTrack(-1)} disabled={!tracks.length} aria-label="Pista anterior" title="Pista anterior">|‹</button><button id="media-toggle" type="button" className="media-control-button media-play-button" onClick={toggleMediaPlayback} disabled={!currentTrack} aria-label={isMediaPlaying ? 'Pausar' : 'Reproducir'} title={isMediaPlaying ? 'Pausar' : 'Reproducir'}>{isMediaPlaying ? 'Ⅱ' : '▶'}</button><button id="media-next" type="button" className="media-control-button" onClick={() => changeTrack(1)} disabled={!tracks.length} aria-label="Siguiente pista" title="Siguiente pista">›|</button><label className="volume-control"><span>Volumen</span><input type="range" min="0" max="1" step="0.01" value={volume} onChange={(event) => setVolume(Number(event.target.value))} aria-label="Volumen" /></label></div>{tracks.length > 0 && <ol className="media-track-list" aria-label="Lista de pistas">{tracks.map((track, index) => <li key={track.url}><button type="button" onClick={() => { setActiveTrackIndex(index); setIsMediaPlaying(false) }} aria-current={activeTrackIndex === index ? 'true' : undefined}>{track.name}</button></li>)}</ol>}</div></div>
+      </> : activeTab === 'navigation' ? <NavigationView location={navigationLocation} speed={speed} locationStatus={locationStatus} requestLocation={requestLocation} /> : activeTab === 'maintenance' ? <ChecklistView tasks={maintenanceTasks} setTasks={setMaintenanceTasks} /> : activeTab === 'storage' ? <StorageView /> : <section className="feature-view multimedia-view" aria-labelledby="multimedia-heading">
+        <div className="feature-heading"><div><p className="eyebrow">A BORDO</p><h1 id="multimedia-heading">Multimedia</h1></div></div>
+        <div className="media-source-tabs" role="tablist" aria-label="Fuente de música">
+          <button id="local-audio-tab" type="button" role="tab" aria-selected={mediaSource === 'local'} aria-controls="local-audio-panel" onClick={() => setMediaSource('local')}>Archivos locales</button>
+          <button id="spotify-tab" type="button" role="tab" aria-selected={mediaSource === 'spotify'} aria-controls="spotify-panel" onClick={() => setMediaSource('spotify')}>Spotify</button>
+        </div>
+        <div id="local-audio-panel" className="media-source-panel" role="tabpanel" aria-labelledby="local-audio-tab" hidden={mediaSource !== 'local'}>
+          <div className="media-player"><div className="media-art" aria-hidden="true"><span>♫</span><strong>{currentTrack ? 'LOCAL' : 'MÚSICA'}</strong></div><div className="media-content"><p className="eyebrow">MÚSICA A BORDO</p><h2>Archivos locales</h2><p>Selecciona archivos de audio de este dispositivo. No se envían a ningún servicio externo.</p><label className="field-label" htmlFor="local-audio-files">Archivos de música</label><input id="local-audio-files" className="api-input media-file-input" type="file" accept="audio/*,.mp3,.wav,.ogg,.oga,.opus,.m4a,.aac,.flac,.webm" multiple onChange={addAudioFiles} /><p className="track-name" title={currentTrack?.name || ''}>{currentTrack?.name || 'No hay pistas seleccionadas'}</p>{currentTrack && <p className="track-details">{currentTrackArtist} <span>·</span> {formatAudioDuration(currentTrackDuration)}</p>}{localMediaError && <p className="storage-error" role="alert">{localMediaError}</p>}<audio ref={audioRef} className="audio-controls" src={currentTrack?.url} preload="metadata" onLoadedMetadata={updateTrackDuration} onError={() => setLocalMediaError('El navegador no puede leer o reproducir este archivo de audio.')} onPlay={() => { setIsMediaPlaying(true); if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing' }} onPause={() => { setIsMediaPlaying(false); if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused' }} onEnded={() => changeTrack(1, true)}>Tu navegador no admite la reproducción de audio.</audio><div className="media-controls"><button id="media-previous" type="button" className="media-control-button" onClick={() => changeTrack(-1)} disabled={!tracks.length} aria-label="Pista anterior" title="Pista anterior">|‹</button><button id="media-toggle" type="button" className="media-control-button media-play-button" onClick={toggleMediaPlayback} disabled={!currentTrack} aria-label={isMediaPlaying ? 'Pausar' : 'Reproducir'} title={isMediaPlaying ? 'Pausar' : 'Reproducir'}>{isMediaPlaying ? 'Ⅱ' : '▶'}</button><button id="media-next" type="button" className="media-control-button" onClick={() => changeTrack(1)} disabled={!tracks.length} aria-label="Siguiente pista" title="Siguiente pista">›|</button><label className="volume-control"><span>Volumen</span><input type="range" min="0" max="1" step="0.01" value={volume} onChange={(event) => setVolume(Number(event.target.value))} aria-label="Volumen" /></label></div>{tracks.length > 0 && <ol className="media-track-list" aria-label="Lista de pistas">{tracks.map((track, index) => <li key={track.url}><button type="button" onClick={() => { setActiveTrackIndex(index); setIsMediaPlaying(false) }} aria-current={activeTrackIndex === index ? 'true' : undefined}><span>{track.name}<small>{track.artist} · {formatAudioDuration(track.duration)}</small></span></button></li>)}</ol>}</div></div>
+        </div>
+        <div id="spotify-panel" role="tabpanel" aria-labelledby="spotify-tab" hidden={mediaSource !== 'spotify'}>
+          <SpotifyPlayer hidden={mediaSource !== 'spotify'} />
+        </div>
       </section>}</div>
 
     </main>

@@ -525,6 +525,32 @@
 .media-track-list button { width: 100%; overflow: hidden; padding: 8px 2px; color: var(--muted); background: transparent; border: 0; font: inherit; font-size: 10px; text-align: left; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
 .media-track-list button[aria-current="true"] { color: var(--accent); font-weight: 700; }
 .media-track-list button:hover { color: var(--heading); }
+.media-source-tabs { display: flex; gap: 8px; margin: 0 0 15px; }
+.media-source-tabs button { min-height: 38px; padding: 0 15px; color: var(--muted); background: var(--panel); border: 1px solid var(--line); border-radius: 5px; font: inherit; font-size: 11px; font-weight: 650; cursor: pointer; }
+.media-source-tabs button[aria-selected="true"] { color: var(--accent); background: var(--accent-soft); border-color: var(--accent); }
+.media-source-panel[hidden], #spotify-panel[hidden] { display: none; }
+.track-details { margin: 5px 0 0; color: var(--muted); font-size: 10px; }
+.track-details span { padding: 0 3px; }
+.media-track-list small { display: block; overflow: hidden; margin-top: 3px; color: var(--muted); font-size: 9px; text-overflow: ellipsis; }
+.spotify-art { background: #16834a; }
+.spotify-connected-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 12px 0; }
+.spotify-connection-indicator { display: inline-flex; align-items: center; gap: 7px; color: var(--heading); font-size: 11px; font-weight: 650; }
+.spotify-connection-indicator::before { width: 8px; height: 8px; content: ''; background: #1db954; border-radius: 50%; }
+.spotify-button { min-height: 38px; padding: 0 15px; color: #fff; background: #16834a; border: 0; border-radius: 20px; font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; }
+.spotify-button:hover { background: #126d3e; }
+.spotify-search { display: flex; gap: 8px; margin: 13px 0; }
+.spotify-search input { min-width: 0; flex: 1; height: 38px; padding: 0 11px; color: var(--heading); background: var(--input-bg); border: 1px solid var(--line); border-radius: 5px; font: inherit; font-size: 11px; }
+.spotify-current-track { display: grid; gap: 4px; margin: 14px 0 2px; }
+.spotify-current-track strong { overflow: hidden; color: var(--heading); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.spotify-current-track span, .spotify-current-track small { overflow: hidden; color: var(--muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.spotify-controls { margin-top: 9px; }
+.spotify-track-list { max-height: 190px; }
+.spotify-track-list button { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.spotify-track-list button span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.spotify-track-list button small { white-space: nowrap; }
+.spotify-note, .spotify-status, .spotify-setup-hint { margin: 12px 0 0 !important; color: var(--muted); font-size: 10px !important; line-height: 1.5; }
+.spotify-setup-hint code, .media-content code { padding: 2px 4px; background: var(--soft); border-radius: 3px; font-size: .95em; }
+.spotify-error { margin-top: 12px; }
 .install-button { white-space: nowrap; }
 
 .storage-view { --storage-accent: #327b72; }

@@ -34,7 +34,8 @@ El proyecto se plantea como una base de prototipado: antes de integrarlo con un 
 - Velocidad y ubicación obtenidas mediante el GPS del dispositivo, con un mapa interactivo.
 - Estado e historial de batería del **dispositivo** cuando el navegador ofrece la Battery Status API; no representa la batería del vehículo.
 - Sección de mantenimiento con una lista de tareas.
-- Reproductor de archivos de audio seleccionados localmente, sin subirlos a un servicio.
+- Reproductor de audio local con lista de pistas, nombre, artista y duración disponibles, controles de reproducción y volumen; los archivos no se suben a ningún servicio.
+- Conexión con Spotify mediante OAuth PKCE, búsqueda de canciones y reproducción en el reproductor web de Spotify.
 - Biblioteca local para guardar y organizar archivos en carpetas, buscarlos, filtrarlos, previsualizarlos y eliminarlos sin conexión.
 - Interfaz adaptable e instalable como aplicación web progresiva (PWA) en navegadores compatibles.
 - Preparación para empaquetar la PWA como aplicación Android mediante Trusted Web Activity (TWA); consulta [PWA-APK.md](./PWA-APK.md) y [DEPLOY-APK.md](./DEPLOY-APK.md).
@@ -65,7 +66,10 @@ La disponibilidad de GPS, batería, instalación PWA y reconocimiento de voz dep
 git clone https://github.com/CristalL29/JARVIS.git
 cd JARVIS
 npm ci
+cp .env.example .env
 ```
+
+Para habilitar Spotify, configura `VITE_SPOTIFY_CLIENT_ID` en `.env` con el Client ID de tu aplicación de Spotify for Developers. En la configuración de Spotify registra como **Redirect URI** el valor que JARVIS muestra bajo **Conectar con Spotify**. Spotify no admite `localhost` como Redirect URI; por eso, si abres JARVIS en `localhost`, la aplicación cambia automáticamente a `127.0.0.1`. En desarrollo, la URI habitual será `http://127.0.0.1:5173/`. También puedes fijar el valor en `.env` con `VITE_SPOTIFY_REDIRECT_URI`; si lo dejas vacío, JARVIS usa automáticamente el origen y la ruta actuales, convirtiendo `localhost` en `127.0.0.1`. El valor debe coincidir exactamente en ambos sitios, incluidos protocolo, host, puerto, ruta y barra final, y debes abrir JARVIS con el mismo origen que aparece en la URI. Después de cambiar `.env`, reinicia Vite. No necesitas un Client Secret y nunca debes añadirlo al código del navegador. La reproducción web de Spotify requiere una cuenta Premium, conexión a Internet y que la cuenta esté autorizada para usar tu aplicación de Spotify.
 
 Inicia el servidor de desarrollo:
 
@@ -186,7 +190,7 @@ Usa la barra de navegación para cambiar entre las vistas disponibles:
 - **Dashboard:** consulta la fecha, el clima actual, el pronóstico de tres días, la velocidad y ubicación GPS, y la batería del dispositivo. El panel de consumo muestra un historial local del dispositivo; el botón **Borrar** elimina ese historial.
 - **Navegación:** consulta el mapa y la información de ubicación disponible. Para obtener datos GPS, permite el acceso a la ubicación cuando el navegador lo solicite.
 - **Mantenimiento / Kanban:** escribe una tarea y selecciona **Añadir tarea**. Las tareas pasan de **Pendiente** a **En curso** y luego a **Hecho** con **Avanzar**; en la columna final, **Reabrir** devuelve la tarea a Pendiente. Las tareas son datos de la sesión actual y pueden perderse al recargar la página.
-- **Multimedia:** selecciona uno o varios archivos de audio del dispositivo. Usa los controles para reproducir o pausar, cambiar de pista y ajustar el volumen. Los archivos se reproducen localmente y no se envían a un servicio externo.
+- **Multimedia:** en **Archivos locales**, selecciona uno o varios audios compatibles para ver la lista y reproducirlos, pausarlos, cambiar de pista y ajustar el volumen. El nombre y el artista se muestran a partir del nombre del archivo cuando están disponibles; la duración se obtiene de sus metadatos. En **Spotify**, conecta tu cuenta con la autorización oficial, busca canciones y reprodúcelas desde el reproductor web. Spotify requiere Client ID configurado, una Redirect URI registrada y Spotify Premium.
 
 ### 3. Usar los controles generales
 
