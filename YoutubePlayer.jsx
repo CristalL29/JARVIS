@@ -88,15 +88,10 @@ function YoutubePlayer({ vehicleState = {}, hidden }) {
 
     try {
       const items = await searchYoutubeVideos(trimmed, 6)
-      setResults(items)
-
-      if (!selectedVideo && items[0]) {
-        setSelectedVideo(items[0])
-      }
-
-      if (selectedVideo && !items.some((item) => item.id === selectedVideo.id)) {
-        setSelectedVideo(selectedVideo)
-      }
+      const currentVideoId = selectedVideo?.id
+      const nextResults = items.filter((video) => video.id !== currentVideoId)
+      setResults(nextResults.length ? nextResults : items)
+      setSelectedVideo((current) => current || items[0] || null)
     } catch (searchError) {
       setError(searchError.message || 'No se pudo consultar YouTube en este momento.')
     } finally {
