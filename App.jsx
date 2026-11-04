@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import './App.css'
 import NavigationView from './components/NavigationView.jsx'
 import ChecklistView from './components/ChecklistView.jsx'
@@ -175,6 +175,7 @@ function App() {
   const [mediaSource, setMediaSource] = useState('local')
   const [localMediaError, setLocalMediaError] = useState('')
   const [isMediaPlaying, setIsMediaPlaying] = useState(false)
+  const [isNavigationSpeaking, setIsNavigationSpeaking] = useState(false)
   const [volume, setVolume] = useState(0.8)
   const audioRef = useRef(null)
   const trackUrlsRef = useRef([])
@@ -408,6 +409,7 @@ function App() {
   const currentTrackUrl = currentTrack?.url
   const currentTrackArtist = currentTrack?.artist || 'Artista desconocido'
   const currentTrackDuration = currentTrack?.duration
+  const handleSpeechActivity = useCallback((speaking) => setIsNavigationSpeaking(speaking), [])
   const changeTrack = (offset, autoplay) => {
     if (!tracks.length) return
     const nextIndex = (activeTrackIndex + offset + tracks.length) % tracks.length
@@ -485,8 +487,8 @@ function App() {
   }
 
   useEffect(() => {
-    if (audioRef.current) audioRef.current.volume = volume
-  }, [volume])
+    if (audioRef.current) audioRef.current.volume = volume * (isNavigationSpeaking ? 0.2 : 1)
+  }, [isNavigationSpeaking, volume])
 
   useEffect(() => {
     const player = audioRef.current
@@ -968,19 +970,20 @@ function App() {
       </div>
 
       <footer className="dashboard-footer"><span><span className="footer-mark" />{assistantName.toUpperCase()} · DATOS PARA TU DÍA</span><span>Clima de Open-Meteo <span className="footer-separator">/</span> GPS del dispositivo</span>      </footer>
-      </> : activeTab === 'navigation' ? <NavigationView location={navigationLocation} speed={speed} locationStatus={locationStatus} requestLocation={requestLocation} /> : activeTab === 'maintenance' ? <ChecklistView tasks={maintenanceTasks} setTasks={setMaintenanceTasks} /> : activeTab === 'storage' ? <StorageView /> : activeTab === 'youtube' ? <YoutubePlayer vehicleState={{ speedKmh: speed ?? 0, isMoving: (speed ?? 0) > 5, parkBrakeEngaged: true }} hidden={false} /> : <section className="feature-view multimedia-view" aria-labelledby="multimedia-heading">
+      </> : activeTab === 'navigation' ? <NavigationView location={navigationLocation} speed={speed} locationStatus={locationStatus} requestLocation={requestLocation} onSpeechActivity={handleSpeechActivity} /> : activeTab === 'maintenance' ? <ChecklistView tasks={maintenanceTasks} setTasks={setMaintenanceTasks} /> : activeTab === 'storage' ? <StorageView /> : activeTab === 'youtube' ? <YoutubePlayer vehicleState={{ speedKmh: speed ?? 0, isMoving: (speed ?? 0) > 5, parkBrakeEngaged: true }} hidden={false} /> : <section className="feature-view multimedia-view" aria-labelledby="multimedia-heading">
         <div className="feature-heading"><div><p className="eyebrow">A BORDO</p><h1 id="multimedia-heading">Multimedia</h1></div></div>
         <div className="media-source-tabs" role="tablist" aria-label="Fuente de música">
           <button id="local-audio-tab" type="button" role="tab" aria-selected={mediaSource === 'local'} aria-controls="local-audio-panel" onClick={() => setMediaSource('local')}>Archivos locales</button>
           <button id="spotify-tab" type="button" role="tab" aria-selected={mediaSource === 'spotify'} aria-controls="spotify-panel" onClick={() => setMediaSource('spotify')}>Spotify</button>
         </div>
         <div id="local-audio-panel" className="media-source-panel" role="tabpanel" aria-labelledby="local-audio-tab" hidden={mediaSource !== 'local'}>
-          <div className="media-player"><div className="media-art" aria-hidden="true"><span>♫</span><strong>{currentTrack ? 'LOCAL' : 'MÚSICA'}</strong></div><div className="media-content"><p className="eyebrow">MÚSICA A BORDO</p><h2>Archivos locales</h2><p>Selecciona archivos de audio de este dispositivo. No se envían a ningún servicio externo.</p><label className="field-label" htmlFor="local-audio-files">Archivos de música</label><input id="local-audio-files" className="api-input media-file-input" type="file" accept="audio/*,.mp3,.wav,.ogg,.oga,.opus,.m4a,.aac,.flac,.webm" multiple onChange={addAudioFiles} /><p className="track-name" title={currentTrack?.name || ''}>{currentTrack?.name || 'No hay pistas seleccionadas'}</p>{currentTrack && <p className="track-details">{currentTrackArtist} <span>·</span> {formatAudioDuration(currentTrackDuration)}</p>}{localMediaError && <p className="storage-error" role="alert">{localMediaError}</p>}<audio ref={audioRef} className="audio-controls" src={currentTrack?.url} preload="metadata" onLoadedMetadata={updateTrackDuration} onError={() => setLocalMediaError('El navegador no puede leer o reproducir este archivo de audio.')} onPlay={() => { setIsMediaPlaying(true); if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing' }} onPause={() => { setIsMediaPlaying(false); if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused' }} onEnded={() => changeTrack(1, true)}>Tu navegador no admite la reproducción de audio.</audio><div className="media-controls"><button id="media-previous" type="button" className="media-control-button" onClick={() => changeTrack(-1)} disabled={!tracks.length} aria-label="Pista anterior" title="Pista anterior">|‹</button><button id="media-toggle" type="button" className="media-control-button media-play-button" onClick={toggleMediaPlayback} disabled={!currentTrack} aria-label={isMediaPlaying ? 'Pausar' : 'Reproducir'} title={isMediaPlaying ? 'Pausar' : 'Reproducir'}>{isMediaPlaying ? 'Ⅱ' : '▶'}</button><button id="media-next" type="button" className="media-control-button" onClick={() => changeTrack(1)} disabled={!tracks.length} aria-label="Siguiente pista" title="Siguiente pista">›|</button><label className="volume-control"><span>Volumen</span><input type="range" min="0" max="1" step="0.01" value={volume} onChange={(event) => setVolume(Number(event.target.value))} aria-label="Volumen" /></label></div>{tracks.length > 0 && <ol className="media-track-list" aria-label="Lista de pistas">{tracks.map((track, index) => <li key={track.url}><button type="button" onClick={() => { setActiveTrackIndex(index); setIsMediaPlaying(false) }} aria-current={activeTrackIndex === index ? 'true' : undefined}><span>{track.name}<small>{track.artist} · {formatAudioDuration(track.duration)}</small></span></button></li>)}</ol>}</div></div>
-        </div>
-        <div id="spotify-panel" role="tabpanel" aria-labelledby="spotify-tab" hidden={mediaSource !== 'spotify'}>
-          <SpotifyPlayer hidden={mediaSource !== 'spotify'} />
+          <div className="media-player"><div className="media-art" aria-hidden="true"><span>♫</span><strong>{currentTrack ? 'LOCAL' : 'MÚSICA'}</strong></div><div className="media-content"><p className="eyebrow">MÚSICA A BORDO</p><h2>Archivos locales</h2><p>Selecciona archivos de audio de este dispositivo. No se envían a ningún servicio externo.</p><label className="field-label" htmlFor="local-audio-files">Archivos de música</label><input id="local-audio-files" className="api-input media-file-input" type="file" accept="audio/*,.mp3,.wav,.ogg,.oga,.opus,.m4a,.aac,.flac,.webm" multiple onChange={addAudioFiles} /><p className="track-name" title={currentTrack?.name || ''}>{currentTrack?.name || 'No hay pistas seleccionadas'}</p>{currentTrack && <p className="track-details">{currentTrackArtist} <span>·</span> {formatAudioDuration(currentTrackDuration)}</p>}{localMediaError && <p className="storage-error" role="alert">{localMediaError}</p>}<div className="media-controls"><button id="media-previous" type="button" className="media-control-button" onClick={() => changeTrack(-1)} disabled={!tracks.length} aria-label="Pista anterior" title="Pista anterior">|‹</button><button id="media-toggle" type="button" className="media-control-button media-play-button" onClick={toggleMediaPlayback} disabled={!currentTrack} aria-label={isMediaPlaying ? 'Pausar' : 'Reproducir'} title={isMediaPlaying ? 'Pausar' : 'Reproducir'}>{isMediaPlaying ? 'Ⅱ' : '▶'}</button><button id="media-next" type="button" className="media-control-button" onClick={() => changeTrack(1)} disabled={!tracks.length} aria-label="Siguiente pista" title="Siguiente pista">›|</button><label className="volume-control"><span>Volumen</span><input type="range" min="0" max="1" step="0.01" value={volume} onChange={(event) => setVolume(Number(event.target.value))} aria-label="Volumen" /></label></div>{tracks.length > 0 && <ol className="media-track-list" aria-label="Lista de pistas">{tracks.map((track, index) => <li key={track.url}><button type="button" onClick={() => { setActiveTrackIndex(index); setIsMediaPlaying(false) }} aria-current={activeTrackIndex === index ? 'true' : undefined}><span>{track.name}<small>{track.artist} · {formatAudioDuration(track.duration)}</small></span></button></li>)}</ol>}</div></div>
         </div>
       </section>}</div>
+      <div id="spotify-panel" role="tabpanel" aria-labelledby="spotify-tab" hidden={activeTab !== 'multimedia' || mediaSource !== 'spotify'}>
+        <SpotifyPlayer hidden={activeTab !== 'multimedia' || mediaSource !== 'spotify'} ducked={isNavigationSpeaking} />
+      </div>
+      <audio ref={audioRef} hidden className="audio-controls" src={currentTrack?.url} preload="metadata" onLoadedMetadata={updateTrackDuration} onError={() => setLocalMediaError('El navegador no puede leer o reproducir este archivo de audio.')} onPlay={() => { setIsMediaPlaying(true); if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing' }} onPause={() => { setIsMediaPlaying(false); if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused' }} onEnded={() => changeTrack(1, true)}>Tu navegador no admite la reproducción de audio.</audio>
 
     </main>
     <nav className="side-navigation" aria-label="Secciones principales">{tabs.map((tab) => <button className={`nav-tab ${activeTab === tab.id ? 'active' : ''}`} type="button" key={tab.id} onClick={() => selectTab(tab.id)} aria-current={activeTab === tab.id ? 'page' : undefined} title={tab.label}><span className="nav-icon" aria-hidden="true">{tab.icon}</span><span className="nav-label">{tab.label}</span></button>)}</nav>

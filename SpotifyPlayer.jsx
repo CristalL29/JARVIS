@@ -49,7 +49,7 @@ function formatSpotifyDuration(milliseconds) {
   return `${Math.floor(totalSeconds / 60)}:${String(totalSeconds % 60).padStart(2, '0')}`
 }
 
-function SpotifyPlayer({ hidden }) {
+function SpotifyPlayer({ hidden, ducked = false }) {
   const [isConnected, setIsConnected] = useState(() => Boolean(sessionStorage.getItem(TOKEN_STORAGE_KEY)))
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
@@ -60,6 +60,7 @@ function SpotifyPlayer({ hidden }) {
   const [isPlaying, setIsPlaying] = useState(false)
   const [volume, setVolume] = useState(0.8)
   const volumeRef = useRef(volume)
+  const duckedRef = useRef(ducked)
   const playerRef = useRef(null)
   const searchInputRef = useRef(null)
 
@@ -92,6 +93,13 @@ function SpotifyPlayer({ hidden }) {
   }, [])
 
   useEffect(() => {
+    duckedRef.current = ducked
+    if (!playerRef.current) return
+    playerRef.current.setVolume(volumeRef.current * (ducked ? 0.2 : 1))
+      .catch((playerError) => setError(playerError.message || 'No se pudo ajustar el volumen de Spotify.'))
+  }, [ducked])
+
+  useEffect(() => {
     if (!isConnected || !CLIENT_ID) return undefined
 
     let isActive = true
@@ -101,7 +109,7 @@ function SpotifyPlayer({ hidden }) {
 
       player = new window.Spotify.Player({
         name: 'JARVIS',
-        volume: volumeRef.current,
+        volume: volumeRef.current * (duckedRef.current ? 0.2 : 1),
         getOAuthToken: (callback) => {
           getSpotifyAccessToken(CLIENT_ID)
             .then(callback)
@@ -268,7 +276,8 @@ function SpotifyPlayer({ hidden }) {
             const nextVolume = Number(event.target.value)
             volumeRef.current = nextVolume
             setVolume(nextVolume)
-            playerRef.current?.setVolume(nextVolume)
+            playerRef.current?.setVolume(nextVolume * (ducked ? 0.2 : 1))
+              .catch((playerError) => setError(playerError.message || 'No se pudo ajustar el volumen de Spotify.'))
           }} aria-label="Volumen de Spotify" /></label>
         </div>
         {results.length > 0 && <ol className="media-track-list spotify-track-list" aria-label="Resultados de búsqueda de Spotify">{results.map((track) => <li key={track.id}>

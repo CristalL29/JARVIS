@@ -791,6 +791,12 @@
 .navigation-gps-status { display: flex; align-items: center; gap: 8px; margin-top: auto; line-height: 1.4; }
 .navigation-speed { color: var(--muted); font-size: 11px; }
 .navigation-speed strong { color: var(--heading); font-size: 20px; }
+.navigation-guidance-controls { display: grid; gap: 8px; }
+.navigation-guidance-controls button { min-height: 43px; padding: 0 12px; border: 1px solid var(--line); border-radius: 5px; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.navigation-guidance-controls .navigation-start { color: var(--button-text); background: var(--accent); border-color: var(--accent); }
+.navigation-guidance-controls .navigation-voice-toggle { color: var(--heading); background: var(--soft); }
+.navigation-guidance-controls .navigation-voice-toggle.is-enabled { color: var(--accent); }
+.navigation-guidance-controls button:disabled { opacity: .55; cursor: not-allowed; }
 .navigation-cancel { min-height: 43px; color: #b6493d; background: transparent; border: 1px solid var(--line); border-radius: 5px; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
 .navigation-cancel:hover { background: var(--soft); }
 .navigation-marker { background: transparent; border: 0; }

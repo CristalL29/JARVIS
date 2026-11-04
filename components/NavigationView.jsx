@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { divIcon } from 'leaflet'
 import { MapContainer, Marker, Polyline, TileLayer, useMap } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -15,8 +15,25 @@ const maneuverLabels = {
   arrive: 'Has llegado', continue: 'Continúa', notification: 'Continúa',
 }
 
+const maneuverDirections = {
+  'sharp left': 'cerrada a la izquierda', left: 'a la izquierda', 'slight left': 'ligeramente a la izquierda',
+  straight: 'recto', 'slight right': 'ligeramente a la derecha', right: 'a la derecha',
+  'sharp right': 'cerrada a la derecha', uturn: 'en U',
+}
+
 function formatDistance(meters) {
   return meters >= 1000 ? `${(meters / 1000).toFixed(1)} km` : `${Math.round(meters)} m`
+}
+
+function distanceBetween(first, second) {
+  const radians = (degrees) => degrees * Math.PI / 180
+  const latitudeDelta = radians(second.latitude - first.latitude)
+  const longitudeDelta = radians(second.longitude - first.longitude)
+  const latitude1 = radians(first.latitude)
+  const latitude2 = radians(second.latitude)
+  const value = Math.sin(latitudeDelta / 2) ** 2
+    + Math.cos(latitude1) * Math.cos(latitude2) * Math.sin(longitudeDelta / 2) ** 2
+  return 6371000 * 2 * Math.atan2(Math.sqrt(value), Math.sqrt(1 - value))
 }
 
 function formatDuration(seconds) {
@@ -31,9 +48,24 @@ function formatManeuver(step) {
   const type = step.maneuver?.type || 'continue'
   const label = maneuverLabels[type] || 'Continúa'
   const modifier = step.maneuver?.modifier
-  const direction = modifier ? ` ${modifier.replace('-', ' ')}` : ''
+  const direction = modifier ? ` ${maneuverDirections[modifier] || modifier.replace('-', ' ')}` : ''
   const road = step.name ? ` por ${step.name}` : ''
   return `${label}${direction}${road}`
+}
+
+function getRouteProgress(location, route) {
+  if (!location || !route?.coordinates?.length) return 0
+
+  let closestDistance = Infinity
+  let progress = 0
+  route.coordinates.forEach((coordinate, index) => {
+    const distance = distanceBetween(location, { latitude: coordinate[0], longitude: coordinate[1] })
+    if (distance < closestDistance) {
+      closestDistance = distance
+      progress = route.coordinateDistances[index]
+    }
+  })
+  return progress
 }
 
 async function findRoute(start, destination, signal) {
@@ -43,11 +75,26 @@ async function findRoute(start, destination, signal) {
   const data = await response.json()
   const route = data.routes?.[0]
   if (!route) throw new Error('No se encontró una ruta en coche para este destino.')
+  const routeCoordinates = route.geometry.coordinates.map(([longitude, latitude]) => [latitude, longitude])
+  const coordinateDistances = [0]
+  for (let index = 1; index < routeCoordinates.length; index += 1) {
+    coordinateDistances.push(coordinateDistances[index - 1] + distanceBetween(
+      { latitude: routeCoordinates[index - 1][0], longitude: routeCoordinates[index - 1][1] },
+      { latitude: routeCoordinates[index][0], longitude: routeCoordinates[index][1] },
+    ))
+  }
+  let cumulativeDistance = 0
+  const steps = (route.legs?.[0]?.steps || []).map((step) => {
+    const result = { ...step, cumulativeDistance }
+    cumulativeDistance += Number(step.distance) || 0
+    return result
+  })
   return {
-    coordinates: route.geometry.coordinates.map(([longitude, latitude]) => [latitude, longitude]),
+    coordinates: routeCoordinates,
+    coordinateDistances,
     distance: route.distance,
     duration: route.duration,
-    steps: route.legs?.[0]?.steps || [],
+    steps,
   }
 }
 
@@ -75,17 +122,38 @@ function MapControls({ location, route }) {
   </div>
 }
 
-function NavigationView({ location, speed, locationStatus, requestLocation }) {
+function NavigationView({ location, speed, locationStatus, requestLocation, onSpeechActivity }) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState([])
   const [destination, setDestination] = useState(null)
   const [route, setRoute] = useState(null)
+  const [isNavigating, setIsNavigating] = useState(false)
+  const [voiceEnabled, setVoiceEnabled] = useState(true)
+  const [progress, setProgress] = useState(0)
   const [isSearching, setIsSearching] = useState(false)
   const [status, setStatus] = useState('')
   const routeRequestRef = useRef(null)
   const attemptedDestinationRef = useRef(null)
+  const spokenMilestonesRef = useRef(new Set())
+  const arrivalAnnouncedRef = useRef(false)
+  const speechUtteranceRef = useRef(null)
 
-  useEffect(() => () => routeRequestRef.current?.abort(), [])
+  useEffect(() => () => {
+    routeRequestRef.current?.abort()
+    window.speechSynthesis?.cancel()
+    speechUtteranceRef.current = null
+    onSpeechActivity(false)
+  }, [onSpeechActivity])
+
+  useEffect(() => {
+    spokenMilestonesRef.current.clear()
+    arrivalAnnouncedRef.current = false
+  }, [route])
+
+  useEffect(() => {
+    if (!isNavigating || !route || !location) return
+    setProgress((current) => Math.max(current, getRouteProgress(location, route)))
+  }, [isNavigating, location, route])
 
   useEffect(() => {
     if (!destination || !location || attemptedDestinationRef.current === destination.place_id) return
@@ -95,7 +163,7 @@ function NavigationView({ location, speed, locationStatus, requestLocation }) {
     routeRequestRef.current = controller
     setStatus('Calculando ruta…')
     findRoute(location, destination, controller.signal)
-      .then((result) => { setRoute(result); setStatus('Ruta calculada') })
+      .then((result) => { setProgress(0); setRoute(result); setStatus('Ruta calculada') })
       .catch((error) => { if (error.name !== 'AbortError') setStatus(error.message) })
   }, [destination, location])
 
@@ -129,6 +197,8 @@ function NavigationView({ location, speed, locationStatus, requestLocation }) {
   const chooseDestination = (place) => {
     routeRequestRef.current?.abort()
     attemptedDestinationRef.current = null
+    setIsNavigating(false)
+    setProgress(0)
     setDestination(place)
     setRoute(null)
     setResults([])
@@ -139,6 +209,8 @@ function NavigationView({ location, speed, locationStatus, requestLocation }) {
   const clearDestination = () => {
     routeRequestRef.current?.abort()
     attemptedDestinationRef.current = null
+    setIsNavigating(false)
+    setProgress(0)
     setDestination(null)
     setRoute(null)
     setResults([])
@@ -148,7 +220,71 @@ function NavigationView({ location, speed, locationStatus, requestLocation }) {
 
   const center = location ? [location.latitude, location.longitude] : DEFAULT_CENTER
   const routeCoordinates = route?.coordinates || []
-  const nextStep = route?.steps.find((step) => step.maneuver?.type !== 'depart') || route?.steps[0]
+  const nextStepIndex = route?.steps.findIndex((step) => step.maneuver?.type !== 'depart'
+    && step.cumulativeDistance >= progress - 20) ?? -1
+  const nextStep = nextStepIndex >= 0 ? route.steps[nextStepIndex] : null
+  const distanceToNextStep = nextStep ? Math.max(0, nextStep.cumulativeDistance - progress) : 0
+  const remainingDistance = route ? Math.max(0, route.distance - progress) : 0
+  const remainingDuration = route && route.distance > 0 ? route.duration * remainingDistance / route.distance : 0
+
+  const announce = useCallback((message, onFinished) => {
+    if (!('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') {
+      setStatus('Este navegador no permite indicaciones por voz.')
+      onFinished?.()
+      return
+    }
+
+    window.speechSynthesis.cancel()
+    onSpeechActivity(false)
+    const utterance = new SpeechSynthesisUtterance(message)
+    utterance.lang = navigator.language?.startsWith('es') ? navigator.language : 'es-MX'
+    const finish = () => {
+      if (speechUtteranceRef.current !== utterance) return
+      speechUtteranceRef.current = null
+      onSpeechActivity(false)
+      onFinished?.()
+    }
+    utterance.onend = finish
+    utterance.onerror = finish
+    speechUtteranceRef.current = utterance
+    onSpeechActivity(true)
+    try {
+      window.speechSynthesis.speak(utterance)
+    } catch (error) {
+      finish()
+      setStatus(error.message || 'No se pudo reproducir la indicación de voz.')
+    }
+  }, [onSpeechActivity])
+
+  useEffect(() => {
+    if (isNavigating && voiceEnabled) return
+    window.speechSynthesis?.cancel()
+    speechUtteranceRef.current = null
+    onSpeechActivity(false)
+  }, [isNavigating, onSpeechActivity, voiceEnabled])
+
+  useEffect(() => {
+    if (!isNavigating || !voiceEnabled || !route) return
+    if (remainingDistance <= 25) {
+      if (!arrivalAnnouncedRef.current) {
+        arrivalAnnouncedRef.current = true
+        announce('Has llegado a tu destino.', () => setIsNavigating(false))
+        setStatus('Has llegado a tu destino.')
+      }
+      return
+    }
+    if (!nextStep) return
+
+    const stepKey = String(nextStepIndex)
+    if (distanceToNextStep <= 160 && !spokenMilestonesRef.current.has(`${stepKey}:near`)) {
+      spokenMilestonesRef.current.add(`${stepKey}:near`)
+      spokenMilestonesRef.current.add(`${stepKey}:early`)
+      announce(`En ${formatDistance(distanceToNextStep)}, ${formatManeuver(nextStep)}.`)
+    } else if (distanceToNextStep <= 700 && !spokenMilestonesRef.current.has(`${stepKey}:early`)) {
+      spokenMilestonesRef.current.add(`${stepKey}:early`)
+      announce(`En ${formatDistance(distanceToNextStep)}, ${formatManeuver(nextStep)}.`)
+    }
+  }, [announce, distanceToNextStep, isNavigating, nextStep, nextStepIndex, remainingDistance, route, voiceEnabled])
 
   return <section className="feature-view navigation-view" aria-labelledby="navigation-heading">
     <div className="feature-heading"><div><p className="eyebrow">MAPA Y RUTAS</p><h1 id="navigation-heading">Navegación</h1></div></div>
@@ -179,8 +315,27 @@ function NavigationView({ location, speed, locationStatus, requestLocation }) {
       <aside className="navigation-info" aria-label="Información de ruta">
         <div className="navigation-destination"><p className="eyebrow">DESTINO</p><strong>{destination?.name || 'Busca un lugar para comenzar'}</strong>{destination && <span className="navigation-loading">{destination.address}</span>}</div>
         {route && <>
-          <div className="navigation-route-stats"><strong>{formatDistance(route.distance)}</strong><span>{formatDuration(route.duration)}</span></div>
-          <div className="navigation-next-turn"><p className="eyebrow">SIGUIENTE INDICACIÓN</p><strong>{formatManeuver(nextStep)}</strong><span className="navigation-loading">{nextStep ? `En ${formatDistance(nextStep.distance)}` : ''}</span></div>
+          <div className="navigation-route-stats"><strong>{formatDistance(isNavigating ? remainingDistance : route.distance)}</strong><span>{formatDuration(isNavigating ? remainingDuration : route.duration)}</span></div>
+          <div className="navigation-next-turn"><p className="eyebrow">{isNavigating ? 'SIGUIENTE INDICACIÓN' : 'INICIO DE RUTA'}</p><strong>{formatManeuver(nextStep)}</strong><span className="navigation-loading">{nextStep ? `En ${formatDistance(distanceToNextStep)}` : ''}</span></div>
+          <div className="navigation-guidance-controls">
+            <button type="button" className="navigation-start" onClick={() => {
+              if (!isNavigating) {
+                setProgress(getRouteProgress(location, route))
+                spokenMilestonesRef.current.clear()
+                arrivalAnnouncedRef.current = false
+              }
+              setIsNavigating((active) => !active)
+              setStatus(isNavigating ? 'Navegación finalizada.' : 'Navegación iniciada. Sigue las indicaciones de la ruta.')
+            }}>{isNavigating ? 'Finalizar navegación' : 'Iniciar navegación'}</button>
+            <button
+              type="button"
+              className={`navigation-voice-toggle ${voiceEnabled ? 'is-enabled' : ''}`}
+              onClick={() => setVoiceEnabled((enabled) => !enabled)}
+              disabled={!('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined'}
+              aria-pressed={voiceEnabled}
+              title={!('speechSynthesis' in window) ? 'Este navegador no admite voz' : undefined}
+            >{voiceEnabled ? 'Voz activada' : 'Voz desactivada'}</button>
+          </div>
         </>}
         <div className="navigation-speed">Velocidad actual <strong>{Number.isFinite(speed) ? `${Math.round(speed)} km/h` : '—'}</strong></div>
         <div className="navigation-gps-status"><span className={`status-dot ${location ? 'active' : ''}`} />{locationStatus}</div>
