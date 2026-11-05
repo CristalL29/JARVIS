@@ -1,16 +1,17 @@
 const CACHE_NAME = 'jarvis-shell-v1'
-const BUILD_MANIFEST_URL = '/build-manifest.json'
+const APP_BASE_URL = self.registration.scope
+const BUILD_MANIFEST_URL = new URL('build-manifest.json', APP_BASE_URL).href
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then(async (cache) => {
-    await cache.add('/')
+    await cache.add(APP_BASE_URL)
     const response = await fetch(BUILD_MANIFEST_URL)
     if (!response.ok) throw new Error('No se pudo leer el manifiesto de recursos de la app.')
     const manifest = await response.json()
     const assets = new Set([BUILD_MANIFEST_URL])
     for (const entry of Object.values(manifest)) {
       for (const asset of [entry.file, ...(entry.css || []), ...(entry.assets || [])]) {
-        if (asset) assets.add(new URL(asset, self.location.origin).href)
+        if (asset) assets.add(new URL(asset, APP_BASE_URL).href)
       }
     }
     await cache.addAll([...assets])
@@ -36,6 +37,6 @@ self.addEventListener('fetch', (event) => {
         caches.open(CACHE_NAME).then((cache) => cache.put(request, copy))
       }
       return response
-    }).catch(() => caches.match(request).then((cached) => cached || (request.mode === 'navigate' ? caches.match('/') : Response.error()))),
+    }).catch(() => caches.match(request).then((cached) => cached || (request.mode === 'navigate' ? caches.match(APP_BASE_URL) : Response.error()))),
   )
 })

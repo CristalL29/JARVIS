@@ -272,7 +272,10 @@ function App() {
 
   useEffect(() => {
     if ('serviceWorker' in navigator && window.isSecureContext && import.meta.env.PROD) {
-      navigator.serviceWorker.register('/service-worker.js').catch(() => {})
+      const serviceWorkerUrl = `${import.meta.env.BASE_URL}service-worker.js`
+      navigator.serviceWorker.register(serviceWorkerUrl).catch((error) => {
+        console.error('No se pudo registrar el service worker.', error)
+      })
     }
   }, [])
 

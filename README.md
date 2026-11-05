@@ -112,7 +112,7 @@ JARVIS/
 
 ## Publicación y Android
 
-Ejecuta `npm run build` y publica el contenido de `dist/` en un hosting estático con HTTPS. Para la instalación PWA y el empaquetado Android como TWA, consulta [DEPLOY-APK.md](./DEPLOY-APK.md) y [PWA-APK.md](./PWA-APK.md). El proyecto no lee sensores ni datos reales del vehículo.
+GitHub Pages se publica automáticamente desde la rama `main` mediante GitHub Actions. En **Settings > Pages**, selecciona **GitHub Actions** como fuente de publicación; el workflow compila Vite y despliega `dist/` bajo `/JARVIS/`. También puedes ejecutar `npm run build` y publicar el contenido de `dist/` en un hosting estático con HTTPS. Para la instalación PWA y el empaquetado Android como TWA, consulta [DEPLOY-APK.md](./DEPLOY-APK.md) y [PWA-APK.md](./PWA-APK.md). El proyecto no lee sensores ni datos reales del vehículo.
 
 ## Contribuciones
 
