@@ -1,276 +1,132 @@
 # JARVIS
 
-JARVIS es un prototipo de tablero digital web diseñado para reunir información útil durante un viaje en una interfaz adaptable. Su objetivo a largo plazo es servir como tablero de un vehículo eléctrico solar de dos plazas; la versión actual funciona en el navegador y todavía no se conecta a los sistemas del vehículo.
+JARVIS es un prototipo de tablero web adaptable para navegador y móvil. Reúne información del dispositivo, navegación, mantenimiento y reproducción multimedia. No está conectado a los sistemas del vehículo ni reemplaza sus instrumentos o medidas de seguridad.
 
-[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev/)
-[![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)](https://vite.dev/)
-[![JavaScript](https://img.shields.io/badge/JavaScript-ES_modules-F7DF1E?logo=javascript&logoColor=black)](https://developer.mozilla.org/docs/Web/JavaScript)
-[![PWA](https://img.shields.io/badge/PWA-instalable-5A0FC8?logo=pwa&logoColor=white)](https://web.dev/explore/progressive-web-apps)
+## Funciones
 
-## Contenido
+- **Dashboard:** fecha y hora, clima actual y pronóstico de tres días, ubicación y velocidad estimada por GPS, y estado e historial de batería del dispositivo cuando el navegador lo admite.
+- **Navegación:** búsqueda de destinos, mapa y rutas en coche, con indicaciones de voz cuando el navegador las permite.
+- **Mantenimiento/Kanban:** tareas con fechas y columnas Pendiente, En curso y Hecho; permite archivar tareas y solicitar recordatorios del navegador. Las tareas se guardan en el almacenamiento local del navegador.
+- **Almacenamiento:** biblioteca local en IndexedDB, con carpetas, filtros, búsqueda, vista previa, descarga y eliminación de archivos.
+- **Multimedia:** reproducción de archivos de audio locales y conexión opcional con Spotify.
+- **YouTube:** búsqueda y reproducción de videos incrustados. El inicio de sesión que muestra esta sección es una demostración; no autentica una cuenta de Google o YouTube.
+- **PWA:** se puede instalar desde navegadores compatibles y guarda una copia de la interfaz para facilitar la carga sin conexión. Las funciones que dependen de Internet siguen necesitando conexión.
+- **Voz y apariencia:** lectura en voz alta, comandos de voz y tema claro/oscuro cuando el navegador ofrece las funciones necesarias.
 
-- [Antecedentes](#antecedentes)
-- [Características](#características)
-- [Tecnologías](#tecnologías)
-- [Requisitos e instalación](#requisitos-e-instalación)
-- [Manual instructivo](#manual-instructivo)
-- [Manual de uso de la aplicación](#manual-de-uso-de-la-aplicación)
-- [Estructura](#estructura)
-- [Metodología](#metodología)
-- [Desarrollo y alcance](#desarrollo-y-alcance)
-- [Contribuciones](#contribuciones)
-- [Autores y créditos](#autores-y-créditos)
-- [Licencia](#licencia)
+La velocidad, ubicación y batería son las del dispositivo, no las del vehículo. El bloqueo de video de YouTube usa la velocidad estimada por el GPS del dispositivo y un estado de freno de estacionamiento fijo en el código; no recibe datos del vehículo ni constituye una función de seguridad.
 
-## Antecedentes
+## Requisitos
 
-Un vehículo eléctrico solar de dos plazas necesita una interfaz clara que permita consultar información relevante sin distraer a quien conduce. JARVIS explora esa experiencia mediante un tablero web que agrupa navegación, velocidad, clima y herramientas de a bordo.
+- Node.js `^20.19.0` o `>=22.12.0` (requisito de Vite 8).
+- npm y Git.
+- Navegador moderno. GPS, notificaciones e instalación PWA dependen del navegador y los permisos; la geolocalización y la PWA requieren HTTPS o `localhost`.
+- Conexión a Internet para mapas, rutas, clima, Spotify y búsqueda de YouTube.
 
-El proyecto se plantea como una base de prototipado: antes de integrarlo con un vehículo real, permite desarrollar y evaluar la interfaz y sus funciones en un navegador o dispositivo móvil. La lectura de datos reales del vehículo y de su sistema de energía queda fuera del alcance de esta versión.
+## Instalación y desarrollo
 
-## Características
+```bash
+git clone https://github.com/CristalL29/JARVIS.git
+cd JARVIS
+npm ci
+npm run dev
+```
 
-- Panel principal con hora, clima actual y pronóstico de tres días.
-- Velocidad y ubicación obtenidas mediante el GPS del dispositivo, con un mapa interactivo.
-- Estado e historial de batería del **dispositivo** cuando el navegador ofrece la Battery Status API; no representa la batería del vehículo.
-- Sección de mantenimiento con una lista de tareas.
-- Reproductor de audio local con lista de pistas, nombre, artista y duración disponibles, controles de reproducción y volumen; los archivos no se suben a ningún servicio.
-- Conexión con Spotify mediante OAuth PKCE, búsqueda de canciones y reproducción en el reproductor web de Spotify.
-- Biblioteca local para guardar y organizar archivos en carpetas, buscarlos, filtrarlos, previsualizarlos y eliminarlos sin conexión.
-- Interfaz adaptable e instalable como aplicación web progresiva (PWA) en navegadores compatibles.
-- Preparación para empaquetar la PWA como aplicación Android mediante Trusted Web Activity (TWA); consulta [PWA-APK.md](./PWA-APK.md) y [DEPLOY-APK.md](./DEPLOY-APK.md).
+Abre la dirección que indique Vite. El servidor de desarrollo escucha en la red local; para usar funciones que requieren un contexto seguro, abre la aplicación mediante `localhost` en el mismo dispositivo o publícala con HTTPS.
 
-La disponibilidad de GPS, batería, instalación PWA y reconocimiento de voz depende del dispositivo, el navegador, los permisos y el contexto seguro (HTTPS o `localhost`).
+### Configurar Spotify
+
+Spotify necesita un Client ID propio para habilitar la conexión. Créalo en [Spotify for Developers](https://developer.spotify.com/dashboard/) y, en la raíz del proyecto, crea un archivo local llamado `.env` con:
+
+```dotenv
+VITE_SPOTIFY_CLIENT_ID=tu_client_id
+```
+
+`.env` está excluido de Git. No existe un `.env.example` en este repositorio, así que crea el archivo manualmente. El Client ID es un identificador público que la aplicación web necesita; **no** agregues un Client Secret ni contraseñas al código del navegador o al repositorio.
+
+Después de iniciar la aplicación, abre **Multimedia > Spotify**. La interfaz muestra la **Redirect URI** que debes registrar en la configuración de tu aplicación de Spotify for Developers; cópiala exactamente, incluida la ruta y la barra final. En el servidor local habitual será `http://127.0.0.1:5173/`. JARVIS convierte `localhost` en `127.0.0.1` para el callback. Si Vite usa otro puerto, registra la URI que muestra la aplicación. También puedes definir opcionalmente `VITE_SPOTIFY_REDIRECT_URI` en `.env`; debe coincidir exactamente con una URI registrada. Reinicia Vite después de cambiar `.env`.
+
+La conexión usa OAuth con PKCE y no requiere Client Secret. La reproducción mediante Spotify Web Playback SDK requiere Spotify Premium, Internet y una cuenta autorizada para tu aplicación según la configuración de Spotify.
+
+### Configurar la búsqueda de YouTube
+
+La búsqueda usa YouTube Data API v3. La clave actual está definida en `youtubeService.js`; para usar una clave propia, configúrala allí y restríngela en Google Cloud a la API y los sitios web permitidos. Una clave incluida en una aplicación web es visible para sus usuarios y no debe tratarse como una contraseña. El botón de inicio de sesión de YouTube es solo una simulación local.
+
+## Comprobaciones
+
+```bash
+npm run lint
+npm run build
+npm run preview
+```
+
+La compilación de producción queda en `dist/`. Hay pruebas del servicio de YouTube que se pueden ejecutar con Node.js:
+
+```bash
+node --test youtubeService.test.js
+```
+
+## Uso y límites
+
+- **Dashboard y navegación:** concede permiso de ubicación. El clima usa Open-Meteo; la búsqueda de lugares usa Nominatim, el cálculo de rutas usa OSRM y el mapa carga mosaicos de OpenStreetMap. Las indicaciones habladas dependen de la síntesis de voz del navegador.
+- **Mantenimiento/Kanban:** crea tareas, cambia su estado entre las tres columnas, edita fechas o archívalas. Los recordatorios requieren permiso de notificaciones. Los datos se guardan en el almacenamiento local del navegador.
+- **Almacenamiento:** los archivos seleccionados se guardan en IndexedDB en este navegador y dispositivo. El espacio disponible y la persistencia dependen del navegador; borrar los datos del sitio puede eliminarlos.
+- **Multimedia local:** permite seleccionar archivos para reproducirlos en el navegador; no se suben a un servicio.
+- **Spotify:** conecta la cuenta, busca canciones y controla la reproducción desde el reproductor web. La sesión OAuth se mantiene en `sessionStorage` del navegador.
+- **YouTube:** el inicio de sesión es de demostración, no una autenticación real; la búsqueda utiliza YouTube Data API y el video se reproduce mediante un reproductor incrustado.
+
+La PWA almacena la interfaz y recursos propios para permitir la carga básica sin conexión; los datos de servicios externos y la reproducción en línea no quedan disponibles sin Internet. La ubicación se utiliza para mostrar el GPS, solicitar el clima y calcular rutas. No se envía telemetría del vehículo porque esta aplicación no está conectada a él.
+
+JARVIS es un prototipo, no un sistema certificado de navegación o seguridad automotriz. La velocidad puede ser inexacta y la disponibilidad de GPS, batería, voz y reproducción multimedia depende del dispositivo. No configures la aplicación ni manipules sus controles mientras conduces.
 
 ## Tecnologías
 
-- **JavaScript (ES modules)**, **React 19** y **Vite 8** para la aplicación web.
-- **React Leaflet 5** y **Leaflet 1.9** para el mapa.
-- **OpenStreetMap** para los mosaicos del mapa.
-- **APIs web del navegador**, entre ellas Geolocation, Battery Status, IndexedDB para archivos locales y reproducción de audio.
-- **PWA y Capacitor**: manifiesto y service worker para instalación web, con configuración y herramientas Gradle para el flujo Android.
-- **Oxlint** para análisis estático del código.
+- JavaScript ES modules, React 19 y Vite 8.
+- React Leaflet 5 y Leaflet 1.9 con mosaicos de OpenStreetMap.
+- APIs del navegador: Geolocation, Battery Status, IndexedDB, Web Audio, voz, notificaciones y reproducción multimedia.
+- Service worker para recursos de la aplicación y experiencia PWA.
+- OAuth PKCE y Spotify Web Playback SDK para la integración con Spotify.
+- Oxlint para análisis estático.
 
-## Requisitos e instalación
-
-### Requisitos previos
-
-- Node.js `^20.19.0` o `>=22.12.0` (Vite 8).
-- npm, incluido con Node.js.
-- Git para clonar el repositorio.
-- Un navegador moderno. El GPS y la instalación PWA requieren HTTPS; para desarrollo local, `localhost` es un contexto seguro.
-
-### Configurar el proyecto
-
-```bash
-git clone https://github.com/CristalL29/JARVIS.git
-cd JARVIS
-npm ci
-cp .env.example .env
-```
-
-Para habilitar Spotify, configura `VITE_SPOTIFY_CLIENT_ID` en `.env` con el Client ID de tu aplicación de Spotify for Developers. En la configuración de Spotify registra como **Redirect URI** el valor que JARVIS muestra bajo **Conectar con Spotify**. Spotify no admite `localhost` como Redirect URI; por eso, si abres JARVIS en `localhost`, la aplicación cambia automáticamente a `127.0.0.1`. En desarrollo, la URI habitual será `http://127.0.0.1:5173/`. También puedes fijar el valor en `.env` con `VITE_SPOTIFY_REDIRECT_URI`; si lo dejas vacío, JARVIS usa automáticamente el origen y la ruta actuales, convirtiendo `localhost` en `127.0.0.1`. El valor debe coincidir exactamente en ambos sitios, incluidos protocolo, host, puerto, ruta y barra final, y debes abrir JARVIS con el mismo origen que aparece en la URI. Después de cambiar `.env`, reinicia Vite. No necesitas un Client Secret y nunca debes añadirlo al código del navegador. La reproducción web de Spotify requiere una cuenta Premium, conexión a Internet y que la cuenta esté autorizada para usar tu aplicación de Spotify.
-
-Inicia el servidor de desarrollo:
-
-```bash
-npm run dev
-```
-
-Abre en el navegador la dirección local que muestra Vite. Para comprobar el proyecto antes de publicarlo:
-
-```bash
-npm run lint
-npm run build
-npm run preview
-```
-
-La compilación de producción se genera en `dist/`. Para publicar la PWA, despliega esa carpeta en un hosting estático con HTTPS. Consulta [DEPLOY-APK.md](./DEPLOY-APK.md) y [PWA-APK.md](./PWA-APK.md) para publicación y opciones de empaquetado Android.
-
-## Manual instructivo
-
-### Objetivos
-
-JARVIS busca ofrecer una experiencia de tablero digital útil para la navegación y la observación básica de condiciones durante un recorrido. En esta versión, el objetivo principal es validar la interfaz, las pruebas de uso en navegador y la viabilidad de instalar la app como PWA en dispositivos móviles. El sistema está pensado como prototipo demostrativo y no debe considerarse un sistema de monitoreo del vehículo ni de seguridad activa.
-
-Los objetivos específicos del proyecto son:
-
-- Probar una interfaz clara y legible para consultar hora, clima, posición y navegación.
-- Evaluar la utilidad del GPS, la batería del dispositivo y la reproducción de medios locales.
-- Validar el comportamiento en navegadores modernos y dispositivos móviles.
-- Preparar una base para futuras integraciones con hardware y datos del vehículo.
-
-### Materiales o recursos
-
-Para trabajar con JARVIS se requieren los siguientes recursos:
-
-- Ordenador con Windows, macOS o Linux.
-- Node.js `^20.19.0` o `>=22.12.0`.
-- Gestor de paquetes `npm`.
-- Git para clonar el repositorio.
-- Navegador moderno (Chrome, Edge, Firefox, Safari o equivalente).
-- Internet para cargar mapas y pronósticos meteorológicos.
-- Dispositivo móvil o tableta compatible para pruebas de experiencia PWA.
-- Permisos de geolocalización y acceso a archivos multimedia del navegador.
-
-### Procedimiento
-
-#### 1. Clonar y preparar el repositorio
-
-```bash
-git clone https://github.com/CristalL29/JARVIS.git
-cd JARVIS
-npm ci
-```
-
-#### 2. Ejecutar la aplicación en modo de desarrollo
-
-```bash
-npm run dev
-```
-
-Luego abre la dirección local que indique Vite en el navegador. Si la aplicación se ejecuta en un dispositivo de la misma red, también puede probarse accediendo a la URL local del equipo.
-
-#### 3. Configurar permisos y comprobar la experiencia
-
-1. Acepta los permisos de ubicación si el navegador lo solicita.
-2. Verifica que el mapa se centre en la posición actual.
-3. Comprueba que el clima se actualice con los datos del lugar.
-4. Revisa la sección de mantenimiento y multimedia.
-5. Prueba la aplicación en modo pantalla completa o instalación como acceso directo.
-
-#### 4. Validar el proyecto antes de despliegue
-
-```bash
-npm run lint
-npm run build
-npm run preview
-```
-
-La validación de compilación ayuda a detectar errores de sintaxis, rendimiento y configuración antes de publicar la versión.
-
-#### 5. Preparar la publicación
-
-Para poner la aplicación a disposición en un entorno real, se debe desplegar la carpeta `dist/` en un host estático con soporte HTTPS. Para publicación móvil o paquetes Android, consulta la documentación específica en [DEPLOY-APK.md](./DEPLOY-APK.md) y [PWA-APK.md](./PWA-APK.md).
-
-### Recomendaciones
-
-- Usa `localhost` o HTTPS para garantizar permisos de geolocalización y compatibilidad con PWA.
-- Prueba la app en navegadores y dispositivos reales, no solo en emulación.
-- Mantén la interfaz legible, con contrastes adecuados y elementos de tamaño suficiente para conducción.
-- Considera que la disponibilidad de GPS, batería y audio depende de la plataforma y del navegador.
-- Documenta los errores y comportamientos no esperados antes de integrar funciones más avanzadas.
-- Mantén la lógica de la interfaz separada del contenido visual para facilitar futuras mejoras.
-- Realiza pruebas periódicas con `npm run build` para detectar regresiones antes de cada entrega.
-
-### Medidas de seguridad
-
-Aunque JARVIS es un prototipo, conviene adoptar prácticas básicas de seguridad durante el desarrollo y uso:
-
-- No compartas credenciales, claves de firma, tokens ni datos personales en commits, issues o comentarios.
-- Evita publicar versiones de prueba con información real del usuario o del entorno de trabajo.
-- Usa conexiones HTTPS en producción para proteger la carga de recursos y la experiencia del usuario.
-- No asumas que los datos de GPS, clima o dispositivo son datos del vehículo; verifica su origen y alcance antes de reutilizarlos en otros sistemas.
-- Si se integra con sensores o hardware en el futuro, encapsula la comunicación, valida entradas y restringe permisos al mínimo necesario.
-- Mantén los archivos y dependencias actualizados, especialmente en entornos de despliegue y publicación.
-- No utilices la interfaz como sistema de seguridad, navegación crítica o control automático del vehículo sin validación técnica adicional.
-
-Este manual debe leerse como guía de uso y desarrollo del prototipo, sin sustituir la evaluación técnica ni la validación en entornos reales.
-
-## Manual de uso de la aplicación
-
-### 1. Abrir JARVIS
-
-Abre en un navegador moderno la dirección donde está publicada la aplicación. Para ejecutarla desde el proyecto en tu equipo, inicia el servidor con `npm run dev` y abre la dirección local que muestra Vite. La ubicación requiere HTTPS o `localhost`.
-
-### 2. Recorrer las secciones
-
-Usa la barra de navegación para cambiar entre las vistas disponibles:
-
-- **Dashboard:** consulta la fecha, el clima actual, el pronóstico de tres días, la velocidad y ubicación GPS, y la batería del dispositivo. El panel de consumo muestra un historial local del dispositivo; el botón **Borrar** elimina ese historial.
-- **Navegación:** consulta el mapa y la información de ubicación disponible. Para obtener datos GPS, permite el acceso a la ubicación cuando el navegador lo solicite.
-- **Mantenimiento / Kanban:** escribe una tarea y selecciona **Añadir tarea**. Las tareas pasan de **Pendiente** a **En curso** y luego a **Hecho** con **Avanzar**; en la columna final, **Reabrir** devuelve la tarea a Pendiente. Las tareas son datos de la sesión actual y pueden perderse al recargar la página.
-- **Multimedia:** en **Archivos locales**, selecciona uno o varios audios compatibles para ver la lista y reproducirlos, pausarlos, cambiar de pista y ajustar el volumen. El nombre y el artista se muestran a partir del nombre del archivo cuando están disponibles; la duración se obtiene de sus metadatos. En **Spotify**, conecta tu cuenta con la autorización oficial, busca canciones y reprodúcelas desde el reproductor web. Spotify requiere Client ID configurado, una Redirect URI registrada y Spotify Premium.
-
-### 3. Usar los controles generales
-
-- En la parte superior, el control de lectura en voz alta inicia o detiene la lectura de la página.
-- El control del micrófono activa o detiene los comandos de voz. Si está disponible, selecciona el idioma de reconocimiento en el campo contiguo. Estas funciones dependen de la compatibilidad del navegador y de sus permisos.
-- El control de tema alterna entre apariencia clara y oscura.
-- En dispositivos y navegadores compatibles, selecciona **Instalar** para añadir la aplicación al dispositivo. La instalación requiere que el sitio esté publicado mediante HTTPS.
-
-### 4. Permitir ubicación y consultar el clima
-
-Si la ubicación no aparece, selecciona **Solicitar ubicación** en el panel GPS y acepta el permiso en el navegador. Si anteriormente lo bloqueaste, habilítalo en la configuración de permisos del sitio y vuelve a intentarlo. La señal puede tardar o no estar disponible en interiores.
-
-El GPS y los servicios meteorológicos requieren conexión a Internet para consultar el clima de la ubicación. Las coordenadas se utilizan para solicitar datos meteorológicos a Open-Meteo; el mapa carga mosaicos de OpenStreetMap. Si no hay permiso, señal o conexión, algunos datos no estarán disponibles.
-
-### 5. Consideraciones importantes
-
-- La velocidad, ubicación y batería mostradas corresponden al dispositivo y al navegador, **no al vehículo**.
-- JARVIS es un prototipo y no reemplaza los instrumentos del automóvil, un sistema certificado de navegación ni las medidas de seguridad al conducir. Configura la aplicación únicamente cuando el vehículo esté detenido.
-- El historial de batería se guarda en el almacenamiento local del navegador. La compatibilidad con GPS, batería, voz e instalación varía según el navegador y el dispositivo.
-
-## Estructura
+## Estructura principal
 
 ```text
 JARVIS/
 ├── components/
-│   └── NavigationView.jsx  # Vista de mapa y navegación
-├── App.jsx                 # Estado y vistas principales
-├── App.css                 # Estilos de la aplicación
-├── index.css               # Estilos globales
-├── main.jsx                # Punto de entrada de React
-├── main.js                 # Prototipo anterior; no es el punto de entrada actual
-├── index.html              # Documento HTML de entrada
-├── manifest.webmanifest    # Metadatos de instalación PWA
-├── service-worker.js       # Caché y soporte sin conexión
-├── package.json            # Dependencias y comandos npm
-├── vite.config.js           # Configuración de Vite
-├── capacitor.config.json   # Identidad y configuración de Capacitor
-├── *.gradle                # Configuración Gradle para Android
-├── DEPLOY-APK.md           # Guía de publicación y empaquetado
-└── PWA-APK.md              # Guía de PWA y APK/AAB
+│   ├── ChecklistView.jsx      # Tablero de mantenimiento
+│   └── NavigationView.jsx     # Mapa, destinos y rutas
+├── public/
+│   └── service-worker.js      # Caché de la interfaz
+├── App.jsx                    # Vistas y estado principal
+├── SpotifyPlayer.jsx          # Reproductor de Spotify
+├── spotifyAuth.js             # OAuth PKCE y gestión de sesión
+├── YoutubePlayer.jsx          # Búsqueda y reproductor de YouTube
+├── youtubeService.js          # API y reglas de reproducción de YouTube
+├── StorageView.jsx            # Biblioteca local de archivos
+├── localFileStore.js           # Persistencia de archivos en IndexedDB
+├── checklistService.js         # Persistencia y operaciones de tareas
+├── main.jsx                    # Punto de entrada de React
+├── manifest.webmanifest        # Metadatos de instalación PWA
+├── package.json                # Dependencias y comandos npm
+└── vite.config.js              # Configuración de Vite
 ```
 
-## Metodología
+## Publicación y Android
 
-El trabajo se organiza como prototipado incremental de una interfaz centrada en el uso a bordo:
-
-1. Identificar la información que sería útil en un tablero y agruparla en vistas.
-2. Implementar cada vista como interfaz web con React y componentes reutilizables.
-3. Obtener datos disponibles en el dispositivo mediante APIs del navegador y servicios web cuando corresponde.
-4. Comprobar la experiencia en navegador y dispositivo móvil, incluyendo permisos y disponibilidad de funciones.
-5. Preparar la distribución como PWA y evaluar el empaquetado Android de forma separada.
-
-La lectura desde el vehículo, la validación en el automóvil y la integración con sus sistemas deberán desarrollarse y probarse en etapas posteriores.
-
-## Desarrollo y alcance
-
-La aplicación actual es un prototipo de tablero web: el GPS, la velocidad calculada y el estado de batería provienen del dispositivo y del navegador. No lee telemetría, autonomía, carga, paneles solares ni otros datos del vehículo; tampoco controla sus sistemas. Por ello, no debe utilizarse como tablero certificado ni como sustituto de los instrumentos del automóvil.
-
-El siguiente paso hacia el objetivo del proyecto es definir cómo obtener y validar de forma segura los datos del vehículo solar y diseñar una integración adecuada para el hardware y las condiciones reales de conducción.
-
-Para empaquetar o publicar la PWA, revisa [DEPLOY-APK.md](./DEPLOY-APK.md) y [PWA-APK.md](./PWA-APK.md).
+Ejecuta `npm run build` y publica el contenido de `dist/` en un hosting estático con HTTPS. Para la instalación PWA y el empaquetado Android como TWA, consulta [DEPLOY-APK.md](./DEPLOY-APK.md) y [PWA-APK.md](./PWA-APK.md). El proyecto no lee sensores ni datos reales del vehículo.
 
 ## Contribuciones
 
-Las contribuciones son bienvenidas:
-
-1. Abre un *issue* en [el repositorio](https://github.com/CristalL29/JARVIS/issues) para reportar un error o proponer una mejora. Incluye pasos para reproducirlo, el resultado esperado y el navegador/dispositivo utilizado.
-2. Para cambios de código, crea una rama desde `main` y mantén cada cambio enfocado.
-3. Ejecuta `npx oxlint App.jsx main.jsx components/NavigationView.jsx` y `npm run build`; incluye en tu propuesta cualquier limitación que no hayas podido validar.
-4. Abre un *pull request* con un resumen del cambio y su forma de verificación.
-
-No incluyas credenciales, claves de firma Android ni datos personales en issues o cambios.
+Abre un issue para reportar problemas o proponer mejoras. Para cambios, crea una rama enfocada, ejecuta `npm run lint`, `npm run build` y las pruebas pertinentes, y abre un pull request con un resumen y los pasos de validación. No incluyas Client Secrets, tokens, claves de firma Android ni datos personales en cambios públicos.
 
 ## Autores y créditos
 
 - **CristalL29** — repositorio y desarrollo de JARVIS.
-- **OpenStreetMap** — datos de mapa y colaboradores de sus mosaicos.
-- **Open-Meteo** — servicio de pronóstico meteorológico.
-- Comunidad de React, Vite, Leaflet y Capacitor, por las herramientas de desarrollo.
+- **OpenStreetMap** — datos de mapa y mosaicos.
+- **Open-Meteo** — servicio meteorológico.
+- **Nominatim / OSRM** — búsqueda de lugares y cálculo de rutas.
+- **Spotify / YouTube** — servicios multimedia opcionales.
+- Comunidad de React, Vite y Leaflet — herramientas de desarrollo.
 
 ## Licencia
 
-El repositorio no incluye actualmente un archivo de licencia ni especifica una licencia de uso. Por tanto, no debe asumirse que el código puede reutilizarse, modificarse o distribuirse bajo una licencia de código abierto. La licencia queda pendiente de definir por las personas titulares del proyecto.
+Este repositorio no incluye un archivo de licencia. No debe asumirse que el código puede reutilizarse o distribuirse bajo una licencia de código abierto.
