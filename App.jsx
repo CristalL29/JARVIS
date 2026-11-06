@@ -7,7 +7,15 @@ import SpotifyPlayer from './SpotifyPlayer.jsx'
 import YoutubePlayer from './YoutubePlayer.jsx'
 import { getChecklistAlerts, loadChecklistTasks, saveChecklistTasks, sendChecklistNotification } from './checklistService.js'
 
-const assistantName = 'Jarvis'
+const assistantName = 'JARVIS'
+let pendingInstallPrompt = null
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeinstallprompt', (event) => {
+    event.preventDefault()
+    pendingInstallPrompt = event
+  })
+}
 
 const weatherDescriptions = {
   clear: 'Despejado', clouds: 'Nublado', rain: 'Lluvia', drizzle: 'Llovizna',
@@ -179,7 +187,7 @@ function App() {
   const [volume, setVolume] = useState(0.8)
   const audioRef = useRef(null)
   const trackUrlsRef = useRef([])
-  const [installPrompt, setInstallPrompt] = useState(null)
+  const [installPrompt, setInstallPrompt] = useState(() => pendingInstallPrompt)
   const [location] = useState(null)
   const [navigationLocation, setNavigationLocation] = useState(null)
   const [gpsActive, setGpsActive] = useState(false)
@@ -264,10 +272,19 @@ function App() {
   useEffect(() => {
     const captureInstallPrompt = (event) => {
       event.preventDefault()
+      pendingInstallPrompt = event
       setInstallPrompt(event)
     }
+    const clearInstallPrompt = () => {
+      pendingInstallPrompt = null
+      setInstallPrompt(null)
+    }
     window.addEventListener('beforeinstallprompt', captureInstallPrompt)
-    return () => window.removeEventListener('beforeinstallprompt', captureInstallPrompt)
+    window.addEventListener('appinstalled', clearInstallPrompt)
+    return () => {
+      window.removeEventListener('beforeinstallprompt', captureInstallPrompt)
+      window.removeEventListener('appinstalled', clearInstallPrompt)
+    }
   }, [])
 
   useEffect(() => {
@@ -479,6 +496,7 @@ function App() {
       await installPrompt.prompt()
       await installPrompt.userChoice
     } finally {
+      pendingInstallPrompt = null
       setInstallPrompt(null)
     }
   }
@@ -778,7 +796,7 @@ function App() {
       <header className="topbar">
         <a className="brand" href="#inicio" aria-label={`Inicio de ${assistantName}`}>
           <span className="brand-mark" aria-hidden="true"><span /></span>
-          <span>{assistantName.toLowerCase()}<span className="brand-period">.</span></span>
+          <span>{assistantName}<span className="brand-period">.</span></span>
         </a>
         <div className="topbar-actions">
           <span className="updated-label">PANEL PERSONAL</span>
@@ -982,10 +1000,10 @@ function App() {
         <div id="local-audio-panel" className="media-source-panel" role="tabpanel" aria-labelledby="local-audio-tab" hidden={mediaSource !== 'local'}>
           <div className="media-player"><div className="media-art" aria-hidden="true"><span>♫</span><strong>{currentTrack ? 'LOCAL' : 'MÚSICA'}</strong></div><div className="media-content"><p className="eyebrow">MÚSICA A BORDO</p><h2>Archivos locales</h2><p>Selecciona archivos de audio de este dispositivo. No se envían a ningún servicio externo.</p><label className="field-label" htmlFor="local-audio-files">Archivos de música</label><input id="local-audio-files" className="api-input media-file-input" type="file" accept="audio/*,.mp3,.wav,.ogg,.oga,.opus,.m4a,.aac,.flac,.webm" multiple onChange={addAudioFiles} /><p className="track-name" title={currentTrack?.name || ''}>{currentTrack?.name || 'No hay pistas seleccionadas'}</p>{currentTrack && <p className="track-details">{currentTrackArtist} <span>·</span> {formatAudioDuration(currentTrackDuration)}</p>}{localMediaError && <p className="storage-error" role="alert">{localMediaError}</p>}<div className="media-controls"><button id="media-previous" type="button" className="media-control-button" onClick={() => changeTrack(-1)} disabled={!tracks.length} aria-label="Pista anterior" title="Pista anterior">|‹</button><button id="media-toggle" type="button" className="media-control-button media-play-button" onClick={toggleMediaPlayback} disabled={!currentTrack} aria-label={isMediaPlaying ? 'Pausar' : 'Reproducir'} title={isMediaPlaying ? 'Pausar' : 'Reproducir'}>{isMediaPlaying ? 'Ⅱ' : '▶'}</button><button id="media-next" type="button" className="media-control-button" onClick={() => changeTrack(1)} disabled={!tracks.length} aria-label="Siguiente pista" title="Siguiente pista">›|</button><label className="volume-control"><span>Volumen</span><input type="range" min="0" max="1" step="0.01" value={volume} onChange={(event) => setVolume(Number(event.target.value))} aria-label="Volumen" /></label></div>{tracks.length > 0 && <ol className="media-track-list" aria-label="Lista de pistas">{tracks.map((track, index) => <li key={track.url}><button type="button" onClick={() => { setActiveTrackIndex(index); setIsMediaPlaying(false) }} aria-current={activeTrackIndex === index ? 'true' : undefined}><span>{track.name}<small>{track.artist} · {formatAudioDuration(track.duration)}</small></span></button></li>)}</ol>}</div></div>
         </div>
+        <div id="spotify-panel" role="tabpanel" aria-labelledby="spotify-tab" hidden={mediaSource !== 'spotify'}>
+          <SpotifyPlayer hidden={mediaSource !== 'spotify'} ducked={isNavigationSpeaking} />
+        </div>
       </section>}</div>
-      <div id="spotify-panel" role="tabpanel" aria-labelledby="spotify-tab" hidden={activeTab !== 'multimedia' || mediaSource !== 'spotify'}>
-        <SpotifyPlayer hidden={activeTab !== 'multimedia' || mediaSource !== 'spotify'} ducked={isNavigationSpeaking} />
-      </div>
       <audio ref={audioRef} hidden className="audio-controls" src={currentTrack?.url} preload="metadata" onLoadedMetadata={updateTrackDuration} onError={() => setLocalMediaError('El navegador no puede leer o reproducir este archivo de audio.')} onPlay={() => { setIsMediaPlaying(true); if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing' }} onPause={() => { setIsMediaPlaying(false); if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused' }} onEnded={() => changeTrack(1, true)}>Tu navegador no admite la reproducción de audio.</audio>
 
     </main>

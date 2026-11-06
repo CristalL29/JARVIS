@@ -1,7 +1,7 @@
 {
   "id": "./",
-  "name": "Jarvis · Panel personal",
-  "short_name": "Jarvis",
+  "name": "JARVIS · Panel personal",
+  "short_name": "JARVIS",
   "description": "Panel personal con velocímetro GPS y música local.",
   "lang": "es",
   "start_url": "./",
