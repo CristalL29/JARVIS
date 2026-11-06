@@ -841,7 +841,13 @@ function App() {
             <option value="ru-RU" label="Русский" />
             <option value="ar-SA" label="العربية" />
           </datalist>
-          <button className="icon-button theme-toggle" type="button" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')} aria-label={`Cambiar a tema ${theme === 'light' ? 'oscuro' : 'claro'}`} title={`Cambiar a tema ${theme === 'light' ? 'oscuro' : 'claro'}`}>
+          <button
+            className="icon-button theme-toggle"
+            type="button"
+            onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+            aria-label={`Cambiar a tema ${theme === 'light' ? 'oscuro' : 'claro'}`}
+            title={`Cambiar a tema ${theme === 'light' ? 'oscuro' : 'claro'}`}
+          >
             {theme === 'light' ? '☾' : '☼'}
           </button>
           <span className="updated-label">CLIMA · OPEN-METEO</span>
@@ -993,6 +999,9 @@ function App() {
             <span>Consumo medio estimado</span>
           </div>
           <p className="consumption-note">El historial se guarda solo en este dispositivo.</p>
+          <details className="consumption-details">
+            <summary>Ver historial</summary>
+            <div className="consumption-details-content">
           {battery?.unsupported ? (
             <p className="consumption-empty">Este navegador no ofrece datos de batería.</p>
           ) : batteryHistory.length ? (
@@ -1006,6 +1015,8 @@ function App() {
           ) : (
             <p className="consumption-empty">El registro aparecerá cuando cambie el nivel de batería.</p>
           )}
+            </div>
+          </details>
         </section>
       </div>
 

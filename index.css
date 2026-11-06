@@ -1,19 +1,19 @@
 :root,
 :root[data-theme='light'] {
-  --bg: #edf3ec;
-  --panel: #fbfdf9;
-  --weather-panel: #f5faf2;
-  --text: #57675c;
-  --heading: #203c2b;
-  --muted: #829087;
-  --line: #dce7dc;
-  --soft: #eef4ee;
-  --input-bg: #f7faf6;
-  --accent: #398354;
-  --accent-soft: #e1f0e4;
-  --gauge-track: #e4ebe3;
-  --shadow: rgba(32, 60, 43, .055);
-  --backdrop: rgba(23, 43, 31, .42);
+  --bg: #edf3ed;
+  --panel: #f9fcf8;
+  --weather-panel: #f1f7f1;
+  --text: #647268;
+  --heading: #294536;
+  --muted: #87958c;
+  --line: #dce6dc;
+  --soft: #edf4ed;
+  --input-bg: #f5f9f4;
+  --accent: #668d72;
+  --accent-soft: #e1ece2;
+  --gauge-track: #dfe8df;
+  --shadow: rgba(46, 78, 58, .07);
+  --backdrop: rgba(25, 45, 33, .38);
   --button-text: #ffffff;
   --display: Georgia, 'Times New Roman', serif;
   --sans: 'Aptos', 'Segoe UI', sans-serif;
@@ -30,21 +30,21 @@
 }
 
 :root[data-theme='dark'] {
-  --bg: #0a1b28;
-  --panel: #102838;
-  --weather-panel: #122d3b;
-  --text: #b5c8d0;
-  --heading: #edf7f7;
-  --muted: #86a0aa;
-  --line: #244353;
-  --soft: #183646;
-  --input-bg: #0c2230;
-  --accent: #70c9b0;
-  --accent-soft: rgba(112, 201, 176, .13);
-  --gauge-track: #274353;
-  --shadow: rgba(0, 0, 0, .16);
-  --backdrop: rgba(2, 13, 21, .68);
-  --button-text: #09221f;
+  --bg: #111c16;
+  --panel: #182820;
+  --weather-panel: #1b3025;
+  --text: #b8c7bd;
+  --heading: #e7efe9;
+  --muted: #91a498;
+  --line: #2d4638;
+  --soft: #20382c;
+  --input-bg: #14231b;
+  --accent: #87ad91;
+  --accent-soft: rgba(135, 173, 145, .14);
+  --gauge-track: #304a3c;
+  --shadow: rgba(0, 0, 0, .22);
+  --backdrop: rgba(5, 12, 8, .68);
+  --button-text: #102018;
   color: var(--text);
   background: var(--bg);
   color-scheme: dark;
