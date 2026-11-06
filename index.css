@@ -1,22 +1,22 @@
 :root,
 :root[data-theme='light'] {
-  --bg: #edf3ed;
-  --panel: #f9fcf8;
-  --weather-panel: #f1f7f1;
-  --text: #647268;
-  --heading: #294536;
-  --muted: #87958c;
-  --line: #dce6dc;
-  --soft: #edf4ed;
-  --input-bg: #f5f9f4;
-  --accent: #668d72;
-  --accent-soft: #e1ece2;
-  --gauge-track: #dfe8df;
-  --shadow: rgba(46, 78, 58, .07);
-  --backdrop: rgba(25, 45, 33, .38);
+  --bg: #e8f0eb;
+  --panel: rgba(249, 253, 250, .76);
+  --weather-panel: rgba(239, 248, 242, .82);
+  --text: #51645a;
+  --heading: #183728;
+  --muted: #778b7f;
+  --line: rgba(87, 124, 101, .2);
+  --soft: rgba(223, 239, 228, .72);
+  --input-bg: rgba(243, 250, 245, .8);
+  --accent: #25844e;
+  --accent-soft: rgba(76, 171, 106, .14);
+  --gauge-track: rgba(90, 133, 104, .2);
+  --shadow: rgba(30, 66, 45, .12);
+  --backdrop: rgba(9, 24, 16, .6);
   --button-text: #ffffff;
-  --display: Georgia, 'Times New Roman', serif;
-  --sans: 'Aptos', 'Segoe UI', sans-serif;
+  --display: 'Segoe UI', sans-serif;
+  --sans: 'Segoe UI', 'Aptos', sans-serif;
   color: var(--text);
   background: var(--bg);
   font-family: var(--sans);
@@ -30,21 +30,21 @@
 }
 
 :root[data-theme='dark'] {
-  --bg: #111c16;
-  --panel: #182820;
-  --weather-panel: #1b3025;
-  --text: #b8c7bd;
-  --heading: #e7efe9;
-  --muted: #91a498;
-  --line: #2d4638;
-  --soft: #20382c;
-  --input-bg: #14231b;
-  --accent: #87ad91;
-  --accent-soft: rgba(135, 173, 145, .14);
-  --gauge-track: #304a3c;
-  --shadow: rgba(0, 0, 0, .22);
-  --backdrop: rgba(5, 12, 8, .68);
-  --button-text: #102018;
+  --bg: #07110d;
+  --panel: rgba(14, 29, 22, .76);
+  --weather-panel: rgba(17, 38, 27, .82);
+  --text: #b8cbbf;
+  --heading: #ecf8ef;
+  --muted: #829b8c;
+  --line: rgba(132, 190, 151, .17);
+  --soft: rgba(110, 169, 127, .1);
+  --input-bg: rgba(8, 21, 14, .78);
+  --accent: #87f5a1;
+  --accent-soft: rgba(91, 239, 131, .13);
+  --gauge-track: rgba(132, 190, 151, .2);
+  --shadow: rgba(0, 0, 0, .34);
+  --backdrop: rgba(2, 8, 5, .76);
+  --button-text: #07160d;
   color: var(--text);
   background: var(--bg);
   color-scheme: dark;
@@ -58,7 +58,10 @@ body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
-  background: var(--bg);
+  background:
+    radial-gradient(ellipse at 18% 0%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 38rem),
+    radial-gradient(ellipse at 88% 42%, color-mix(in srgb, var(--accent) 7%, transparent), transparent 34rem),
+    var(--bg);
   transition: background-color 260ms ease, color 260ms ease;
 }
 
@@ -71,6 +74,9 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 }
 
 ::selection { color: var(--heading); background: var(--accent-soft); }
+
+html { scrollbar-color: var(--accent) var(--bg); }
+body { background-attachment: fixed; }
 
 @media (max-width: 320px) {
   html, body { min-width: 0; }

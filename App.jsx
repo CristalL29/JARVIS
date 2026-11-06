@@ -170,7 +170,7 @@ function WeatherIcon({ code, description, className = '' }) {
 }
 
 function App() {
-  const [theme, setTheme] = useState(() => localStorage.getItem('dashboard-theme') || 'light')
+  const [theme, setTheme] = useState(() => localStorage.getItem('dashboard-theme') || 'dark')
   const [activeTab, setActiveTab] = useState(() => {
     const parameters = new URLSearchParams(window.location.search)
     return parameters.has('code') || parameters.has('error') ? 'multimedia' : 'dashboard'
