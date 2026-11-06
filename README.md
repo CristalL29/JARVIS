@@ -6,7 +6,7 @@ JARVIS es un prototipo de tablero web adaptable para navegador y móvil. Reúne 
 
 - **Dashboard:** fecha y hora, clima actual y pronóstico de tres días, ubicación y velocidad estimada por GPS, y estado e historial de batería del dispositivo cuando el navegador lo admite.
 - **Navegación:** búsqueda de destinos, mapa y rutas en coche, con indicaciones de voz cuando el navegador las permite.
-- **Mantenimiento/Kanban:** tareas con fechas y columnas Pendiente, En curso y Hecho; permite archivar tareas y solicitar recordatorios del navegador. Las tareas se guardan en el almacenamiento local del navegador.
+- **Mantenimiento:** lista de inspecciones con fechas, tareas completadas e historial; permite archivar tareas y solicitar recordatorios del navegador. Las tareas se guardan en el almacenamiento local del navegador.
 - **Almacenamiento:** biblioteca local en IndexedDB, con carpetas, filtros, búsqueda, vista previa, descarga y eliminación de archivos.
 - **Multimedia:** reproducción de archivos de audio locales y conexión opcional con Spotify.
 - **YouTube:** búsqueda y reproducción de videos incrustados. El inicio de sesión que muestra esta sección es una demostración; no autentica una cuenta de Google o YouTube.
@@ -68,7 +68,7 @@ node --test youtubeService.test.js
 ## Uso y límites
 
 - **Dashboard y navegación:** concede permiso de ubicación. El clima usa Open-Meteo; la búsqueda de lugares usa Nominatim, el cálculo de rutas usa OSRM y el mapa carga mosaicos de OpenStreetMap. Las indicaciones habladas dependen de la síntesis de voz del navegador.
-- **Mantenimiento/Kanban:** crea tareas, cambia su estado entre las tres columnas, edita fechas o archívalas. Los recordatorios requieren permiso de notificaciones. Los datos se guardan en el almacenamiento local del navegador.
+- **Mantenimiento:** crea tareas, marca las inspecciones completadas, edita fechas o archiva tareas. Los recordatorios requieren permiso de notificaciones. Los datos se guardan en el almacenamiento local del navegador.
 - **Almacenamiento:** los archivos seleccionados se guardan en IndexedDB en este navegador y dispositivo. El espacio disponible y la persistencia dependen del navegador; borrar los datos del sitio puede eliminarlos.
 - **Multimedia local:** permite seleccionar archivos para reproducirlos en el navegador; no se suben a un servicio.
 - **Spotify:** conecta la cuenta, busca canciones y controla la reproducción desde el reproductor web. La sesión OAuth se mantiene en `sessionStorage` del navegador.

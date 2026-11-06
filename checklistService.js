@@ -62,12 +62,6 @@ export function createChecklistTask({ title, startDate = '', endDate = '' }) {
   return normalizeTask({ id: createId(), title: cleanTitle, startDate, endDate, lane: 0 })
 }
 
-export function moveChecklistTask(tasks, id, lane) {
-  return tasks.map((task) => task.id === String(id)
-    ? { ...task, lane, isCompleted: lane === 2, completedAt: lane === 2 ? new Date().toISOString() : null }
-    : task)
-}
-
 export function updateChecklistDates(tasks, id, startDate, endDate) {
   if (startDate && endDate && new Date(endDate) < new Date(startDate)) {
     throw new Error('La fecha límite debe ser posterior al inicio.')
@@ -126,7 +120,7 @@ export async function requestChecklistNotifications() {
 export function sendChecklistNotification(tasks) {
   if (!('Notification' in window) || Notification.permission !== 'granted') return false
   const pending = tasks.length
-  new Notification('Mantenimiento/Kanban del viaje', {
+  new Notification('Mantenimiento del viaje', {
     body: pending === 1 ? 'Hay 1 tarea pendiente antes de iniciar el viaje.' : `Hay ${pending} tareas pendientes antes de iniciar el viaje.`,
     tag: 'jarvis-pre-trip-checklist',
   })

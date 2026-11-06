@@ -44,6 +44,12 @@ function formatDuration(seconds) {
   return `${hours} h ${minutes} min`
 }
 
+function getGreeting(date) {
+  const hour = date.getHours()
+  if (hour < 5 || hour >= 19) return 'Buenas noches'
+  return hour < 12 ? 'Buenos días' : 'Buenas tardes'
+}
+
 function readBatteryHistory() {
   try {
     const history = JSON.parse(localStorage.getItem('battery-consumption-history') || '[]')
@@ -169,6 +175,7 @@ function App() {
     const parameters = new URLSearchParams(window.location.search)
     return parameters.has('code') || parameters.has('error') ? 'multimedia' : 'dashboard'
   })
+  const [currentTime, setCurrentTime] = useState(() => new Date())
   const [isReading, setIsReading] = useState(false)
   const [isListening, setIsListening] = useState(false)
   const [voiceStatus, setVoiceStatus] = useState('')
@@ -218,6 +225,16 @@ function App() {
   useEffect(() => {
     saveChecklistTasks(maintenanceTasks)
   }, [maintenanceTasks])
+
+  useEffect(() => {
+    const updateCurrentTime = () => setCurrentTime(new Date())
+    const timer = window.setInterval(updateCurrentTime, 1000)
+    window.addEventListener('focus', updateCurrentTime)
+    return () => {
+      window.clearInterval(timer)
+      window.removeEventListener('focus', updateCurrentTime)
+    }
+  }, [])
 
   useEffect(() => {
     if (!checklistAlerts.length || checklistNotificationSent) return
@@ -548,7 +565,7 @@ function App() {
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: '⌂' },
     { id: 'navigation', label: 'Navegación', icon: '⌖' },
-    { id: 'maintenance', label: 'Mantenimiento/Kanban', icon: '▦' },
+    { id: 'maintenance', label: 'Mantenimiento', icon: '▦' },
     { id: 'storage', label: 'Almacenamiento', icon: '▤' },
     { id: 'multimedia', label: 'Multimedia', icon: '♫' },
     { id: 'youtube', label: 'YouTube', icon: '▶' },
@@ -749,7 +766,7 @@ function App() {
       const commandAliases = {
         dashboard: ['dashboard', 'home', 'inicio', 'principal', 'accueil', 'startseite', 'inizio', 'painel', '主页', 'ホーム', 'главная', 'لوحة التحكم', '대시보드', 'डैशबोर्ड'],
         navigation: ['navigation', 'navigate', 'navegacion', 'navegar', 'navegacao', 'navigazione', 'navigieren', 'naviguer', '导航', 'ナビ', 'навигация', 'الملاحة', '내비게이션', 'नेविगेशन'],
-        maintenance: ['maintenance', 'mantenimiento', 'kanban', 'entretien', 'wartung', 'manutenzione', 'manutencao', '保养', 'メンテナンス', 'обслуживание', 'الصيانة', '정비', 'रखरखाव'],
+        maintenance: ['maintenance', 'mantenimiento', 'entretien', 'wartung', 'manutenzione', 'manutencao', '保养', 'メンテナンス', 'обслуживание', 'الصيانة', '정비', 'रखरखाव'],
         multimedia: ['multimedia', 'media', 'music', 'musica', 'musique', 'musik', 'multimidia', 'medien', '音乐', '音楽', 'медиа', 'الوسائط', '음악', 'संगीत'],
       }
       const destination = Object.entries(commandAliases).find(([, aliases]) => aliases.some((alias) => normalizedCommand.includes(alias)))?.[0]
@@ -839,11 +856,13 @@ function App() {
       <section className="welcome-row" id="inicio">
         <div>
           <p className="eyebrow">TU DÍA, DE UN VISTAZO</p>
-          <h1>Buenos días<span className="heading-period">.</span></h1>
+          <h1>{getGreeting(currentTime)}<span className="heading-period">.</span></h1>
         </div>
         <div className="date-stamp">
           <span className="date-dot" />
-          {new Intl.DateTimeFormat('es', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date())}
+          <span>{new Intl.DateTimeFormat('es', { weekday: 'long', day: 'numeric', month: 'long' }).format(currentTime)}</span>
+          <span className="date-stamp-separator" aria-hidden="true">·</span>
+          <time className="current-time" dateTime={currentTime.toISOString()}>{new Intl.DateTimeFormat('es', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(currentTime)}</time>
         </div>
       </section>
 

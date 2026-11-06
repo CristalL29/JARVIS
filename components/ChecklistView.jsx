@@ -5,7 +5,6 @@ import {
   deleteChecklistTask,
   getActiveChecklistTasks,
   getArchivedChecklistTasks,
-  moveChecklistTask,
   requestChecklistNotifications,
   toggleChecklistTask,
   updateChecklistDates,
@@ -71,7 +70,7 @@ export default function ChecklistView({ tasks, setTasks }) {
 
   return <section className="feature-view maintenance-view checklist-view">
     <div className="feature-heading">
-      <div><p className="eyebrow">INSPECCIÓN PREVIA AL VIAJE</p><h1>Mantenimiento/Kanban</h1></div>
+      <div><p className="eyebrow">INSPECCIÓN PREVIA AL VIAJE</p><h1>Mantenimiento</h1></div>
       <span className="task-count">{activeTasks.filter((task) => !task.isCompleted).length} pendientes</span>
     </div>
 
@@ -100,30 +99,24 @@ export default function ChecklistView({ tasks, setTasks }) {
         <div className="checklist-actions"><button type="button" onClick={() => updateTasks(archiveChecklistTask, task.id)}>Restaurar</button><button className="checklist-delete" type="button" onClick={() => updateTasks(deleteChecklistTask, task.id)}>Eliminar</button></div>
       </article>)}
       {!archivedTasks.length && <div className="checklist-empty"><strong>No hay tareas archivadas</strong><span>Las tareas archivadas aparecerán aquí.</span></div>}
-    </div> : <div className="kanban-checklist-board">
-      {[{ lane: 0, title: 'Pendiente' }, { lane: 1, title: 'En curso' }, { lane: 2, title: 'Hecho' }].map((column) => {
-        const columnTasks = activeTasks.filter((task) => (task.lane ?? 0) === column.lane)
-        return <section className="kanban-checklist-column" key={column.lane}>
-          <div className="kanban-checklist-heading"><h2>{column.title}</h2><span>{columnTasks.length}</span></div>
-          {columnTasks.map((task) => <article className="kanban-checklist-card" key={task.id}>
-            <button className="checklist-complete" type="button" aria-label={task.isCompleted ? `Reabrir ${task.title}` : `Completar ${task.title}`} aria-pressed={task.isCompleted} onClick={() => updateTasks(toggleChecklistTask, task.id)}><span aria-hidden="true">{task.isCompleted ? '✓' : ''}</span></button>
-            <strong>{task.title}</strong>
-            {editingDatesId === task.id ? <div className="kanban-date-editor">
-              <label>Inicio<input type="datetime-local" value={editingStartDate} onChange={(event) => setEditingStartDate(event.target.value)} /></label>
-              <label>Límite<input type="datetime-local" value={editingEndDate} onChange={(event) => setEditingEndDate(event.target.value)} /></label>
-              <div><button type="button" onClick={() => saveTaskDates(task.id)}>Guardar fechas</button><button type="button" onClick={() => { setEditingDatesId(null); setError('') }}>Cancelar</button></div>
-            </div> : <div className="checklist-dates"><span><b>Inicio:</b> {formatDate(task.startDate)}</span><span><b>Límite:</b> {formatDate(task.endDate)}</span></div>}
-            <div className="kanban-card-actions">
-              <button type="button" onClick={() => startEditingDates(task)}>Editar fechas</button>
-              {column.lane > 0 && <button type="button" onClick={() => setTasks((current) => moveChecklistTask(current, task.id, column.lane - 1))}>← Atrás</button>}
-              {column.lane < 2 && <button type="button" onClick={() => setTasks((current) => moveChecklistTask(current, task.id, column.lane + 1))}>{column.lane === 0 ? 'Iniciar' : 'Completar'} →</button>}
-              <button type="button" onClick={() => updateTasks(archiveChecklistTask, task.id)}>Archivar</button>
-              <button className="checklist-delete" type="button" onClick={() => updateTasks(deleteChecklistTask, task.id)}>Eliminar</button>
-            </div>
-          </article>)}
-          {!columnTasks.length && <p className="kanban-checklist-empty">Sin tareas</p>}
-        </section>
-      })}
+    </div> : <div className="checklist-items">
+      {activeTasks.map((task) => <article className={`checklist-item${task.isCompleted ? ' is-completed' : ''}`} key={task.id}>
+        <button className="checklist-complete" type="button" aria-label={task.isCompleted ? `Reabrir ${task.title}` : `Completar ${task.title}`} aria-pressed={task.isCompleted} onClick={() => updateTasks(toggleChecklistTask, task.id)}><span aria-hidden="true">{task.isCompleted ? '✓' : ''}</span></button>
+        <div className="checklist-item-content">
+          <strong>{task.title}</strong>
+          {editingDatesId === task.id ? <div className="checklist-date-editor">
+            <label>Inicio<input type="datetime-local" value={editingStartDate} onChange={(event) => setEditingStartDate(event.target.value)} /></label>
+            <label>Límite<input type="datetime-local" value={editingEndDate} onChange={(event) => setEditingEndDate(event.target.value)} /></label>
+            <div><button type="button" onClick={() => saveTaskDates(task.id)}>Guardar fechas</button><button type="button" onClick={() => { setEditingDatesId(null); setError('') }}>Cancelar</button></div>
+          </div> : <div className="checklist-dates"><span><b>Inicio:</b> {formatDate(task.startDate)}</span><span><b>Límite:</b> {formatDate(task.endDate)}</span></div>}
+        </div>
+        <div className="checklist-actions">
+          <button type="button" onClick={() => startEditingDates(task)}>Editar fechas</button>
+          <button type="button" onClick={() => updateTasks(archiveChecklistTask, task.id)}>Archivar</button>
+          <button className="checklist-delete" type="button" onClick={() => updateTasks(deleteChecklistTask, task.id)}>Eliminar</button>
+        </div>
+      </article>)}
+      {!activeTasks.length && <div className="checklist-empty"><strong>No hay tareas activas</strong><span>Añade una inspección para comenzar.</span></div>}
     </div>}
   </section>
 }
